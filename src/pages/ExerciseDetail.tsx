@@ -1,15 +1,30 @@
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { mockExercises } from "@/data/mockData";
+import { exerciseStore } from "@/lib/exerciseStore";
+import { Exercise } from "@/data/mockData";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
+import { AddSessionDialog } from "@/components/AddSessionDialog";
 import { ArrowLeft, Calendar, TrendingUp } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 export default function ExerciseDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const exercise = mockExercises.find((ex) => ex.id === id);
+  const [exercise, setExercise] = useState<Exercise | undefined>(undefined);
+
+  useEffect(() => {
+    if (id) {
+      setExercise(exerciseStore.getById(id));
+    }
+  }, [id]);
+
+  const handleSessionAdded = () => {
+    if (id) {
+      setExercise(exerciseStore.getById(id));
+    }
+  };
 
   if (!exercise) {
     return (
@@ -31,7 +46,7 @@ export default function ExerciseDetail() {
     <div className="min-h-screen bg-background pb-20">
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border/50">
         <div className="container max-w-2xl mx-auto px-4 py-4">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 mb-3">
             <Button
               variant="ghost"
               size="icon"
@@ -40,8 +55,13 @@ export default function ExerciseDetail() {
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>
-            <h1 className="text-2xl font-bold text-foreground">{exercise.name}</h1>
+            <h1 className="text-2xl font-bold text-foreground flex-1">{exercise.name}</h1>
           </div>
+          <AddSessionDialog
+            exerciseId={exercise.id}
+            exerciseName={exercise.name}
+            onSessionAdded={handleSessionAdded}
+          />
         </div>
       </div>
 
