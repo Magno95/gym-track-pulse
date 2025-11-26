@@ -46,7 +46,7 @@ export default function ExerciseDetail() {
     <div className="min-h-screen bg-background pb-20">
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border/50">
         <div className="container max-w-2xl mx-auto px-4 py-4">
-          <div className="flex items-center gap-3 mb-3">
+          <div className="flex items-center gap-3">
             <Button
               variant="ghost"
               size="icon"
@@ -57,13 +57,14 @@ export default function ExerciseDetail() {
             </Button>
             <h1 className="text-2xl font-bold text-foreground flex-1">{exercise.name}</h1>
           </div>
-          <AddSessionDialog
-            exerciseId={exercise.id}
-            exerciseName={exercise.name}
-            onSessionAdded={handleSessionAdded}
-          />
         </div>
       </div>
+
+      <AddSessionDialog
+        exerciseId={exercise.id}
+        exerciseName={exercise.name}
+        onSessionAdded={handleSessionAdded}
+      />
 
       <div className="container max-w-2xl mx-auto px-4 py-6">
         <Tabs defaultValue="sessions" className="w-full">
