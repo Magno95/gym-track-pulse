@@ -1,13 +1,24 @@
-import { useState } from "react";
-import { mockExercises } from "@/data/mockData";
+import { useState, useEffect } from "react";
+import { exerciseStore } from "@/lib/exerciseStore";
+import { Exercise } from "@/data/mockData";
 import { SearchBar } from "@/components/SearchBar";
 import { CategorySection } from "@/components/CategorySection";
+import { AddExerciseDialog } from "@/components/AddExerciseDialog";
 import { Dumbbell } from "lucide-react";
 
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [exercises, setExercises] = useState<Exercise[]>([]);
 
-  const filteredExercises = mockExercises.filter((exercise) =>
+  useEffect(() => {
+    setExercises(exerciseStore.getAll());
+  }, []);
+
+  const handleExerciseAdded = () => {
+    setExercises(exerciseStore.getAll());
+  };
+
+  const filteredExercises = exercises.filter((exercise) =>
     exercise.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -49,6 +60,8 @@ const Index = () => {
           </div>
         )}
       </div>
+
+      <AddExerciseDialog onExerciseAdded={handleExerciseAdded} />
     </div>
   );
 };
