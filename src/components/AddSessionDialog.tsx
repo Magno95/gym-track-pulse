@@ -21,8 +21,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { exerciseStore } from "@/lib/exerciseStore";
-import { toast } from "@/hooks/use-toast";
+import { supabaseStore } from "@/lib/supabaseStore";
+import { toast } from "sonner";
 
 const sessionSchema = z.object({
   date: z.string().min(1, { message: "Date is required" }),
@@ -54,6 +54,7 @@ export function AddSessionDialog({
   onSessionAdded,
 }: AddSessionDialogProps) {
   const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const form = useForm<SessionFormValues>({
     resolver: zodResolver(sessionSchema),
@@ -65,19 +66,17 @@ export function AddSessionDialog({
     },
   });
 
-  const onSubmit = (data: SessionFormValues) => {
+  const onSubmit = async (data: SessionFormValues) => {
     try {
-      exerciseStore.addSession(exerciseId, {
+      setLoading(true);
+      await supabaseStore.addSession(exerciseId, {
         date: data.date,
         series: data.series,
         reps: data.reps,
         weight: data.weight,
       });
       const totalValue = data.series * data.reps * data.weight;
-      toast({
-        title: "Session logged!",
-        description: `${data.series}×${data.reps} @ ${data.weight}kg (Total: ${totalValue})`,
-      });
+      toast.success(`${data.series}×${data.reps} @ ${data.weight}kg (Total: ${totalValue})`);
       form.reset({
         date: new Date().toISOString().split("T")[0],
         series: data.series,
@@ -87,11 +86,10 @@ export function AddSessionDialog({
       setOpen(false);
       onSessionAdded();
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to add session. Please try again.",
-        variant: "destructive",
-      });
+      console.error("Error adding session:", error);
+      toast.error("Failed to add session. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -178,8 +176,8 @@ export function AddSessionDialog({
               >
                 Cancel
               </Button>
-              <Button type="submit" className="flex-1">
-                Log Session
+              <Button type="submit" className="flex-1" disabled={loading}>
+                {loading ? "Logging..." : "Log Session"}
               </Button>
             </div>
           </form>

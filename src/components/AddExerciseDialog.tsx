@@ -28,8 +28,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { exerciseStore } from "@/lib/exerciseStore";
-import { toast } from "@/hooks/use-toast";
+import { supabaseStore } from "@/lib/supabaseStore";
+import { toast } from "sonner";
 
 const exerciseSchema = z.object({
   name: z
@@ -50,6 +50,7 @@ interface AddExerciseDialogProps {
 
 export function AddExerciseDialog({ onExerciseAdded }: AddExerciseDialogProps) {
   const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const form = useForm<ExerciseFormValues>({
     resolver: zodResolver(exerciseSchema),
@@ -59,25 +60,22 @@ export function AddExerciseDialog({ onExerciseAdded }: AddExerciseDialogProps) {
     },
   });
 
-  const onSubmit = (data: ExerciseFormValues) => {
+  const onSubmit = async (data: ExerciseFormValues) => {
     try {
-      exerciseStore.addExercise({
+      setLoading(true);
+      await supabaseStore.addExercise({
         name: data.name,
         category: data.category,
       });
-      toast({
-        title: "Exercise added!",
-        description: `${data.name} has been added to ${data.category}.`,
-      });
+      toast.success(`${data.name} has been added to ${data.category}.`);
       form.reset();
       setOpen(false);
       onExerciseAdded();
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to add exercise. Please try again.",
-        variant: "destructive",
-      });
+      console.error("Error adding exercise:", error);
+      toast.error("Failed to add exercise. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -146,8 +144,8 @@ export function AddExerciseDialog({ onExerciseAdded }: AddExerciseDialogProps) {
               >
                 Cancel
               </Button>
-              <Button type="submit" className="flex-1">
-                Add Exercise
+              <Button type="submit" className="flex-1" disabled={loading}>
+                {loading ? "Adding..." : "Add Exercise"}
               </Button>
             </div>
           </form>

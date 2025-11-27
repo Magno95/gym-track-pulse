@@ -14,7 +14,71 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      exercises: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          id?: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      sessions: {
+        Row: {
+          created_at: string
+          date: string
+          exercise_id: string
+          id: string
+          reps: number
+          series: number
+          value: number
+          weight: number
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          exercise_id: string
+          id?: string
+          reps: number
+          series: number
+          value: number
+          weight: number
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          exercise_id?: string
+          id?: string
+          reps?: number
+          series?: number
+          value?: number
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sessions_exercise_id_fkey"
+            columns: ["exercise_id"]
+            isOneToOne: false
+            referencedRelation: "exercises"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

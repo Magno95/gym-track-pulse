@@ -1,14 +1,30 @@
 import { Card } from "@/components/ui/card";
-import { Dumbbell, TrendingUp } from "lucide-react";
-import { Exercise } from "@/data/mockData";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Dumbbell, TrendingUp, Trash2 } from "lucide-react";
+import { ExerciseWithSessions, supabaseStore } from "@/lib/supabaseStore";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+import { useState } from "react";
 
 interface ExerciseCardProps {
-  exercise: Exercise;
+  exercise: ExerciseWithSessions;
+  onDeleted: () => void;
 }
 
-export function ExerciseCard({ exercise }: ExerciseCardProps) {
+export function ExerciseCard({ exercise, onDeleted }: ExerciseCardProps) {
   const navigate = useNavigate();
+  const [deleting, setDeleting] = useState(false);
   const latestSession = exercise.sessions[exercise.sessions.length - 1];
   const previousSession = exercise.sessions[exercise.sessions.length - 2];
   
@@ -16,14 +32,27 @@ export function ExerciseCard({ exercise }: ExerciseCardProps) {
     ? ((latestSession.value - previousSession.value) / previousSession.value * 100).toFixed(1)
     : null;
 
+  const handleDelete = async () => {
+    try {
+      setDeleting(true);
+      await supabaseStore.deleteExercise(exercise.id);
+      toast.success("Exercise deleted successfully");
+      onDeleted();
+    } catch (error) {
+      console.error("Error deleting exercise:", error);
+      toast.error("Failed to delete exercise");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <Card 
-      className="p-4 hover:shadow-lg transition-all cursor-pointer animate-fade-in border-border/50"
+      className="p-4 hover:shadow-lg transition-all animate-fade-in border-border/50 relative group"
       style={{ boxShadow: 'var(--shadow-card)' }}
-      onClick={() => navigate(`/exercise/${exercise.id}`)}
     >
       <div className="flex items-start justify-between">
-        <div className="flex-1">
+        <div className="flex-1 cursor-pointer" onClick={() => navigate(`/exercise/${exercise.id}`)}>
           <h3 className="font-semibold text-lg text-foreground mb-1">
             {exercise.name}
           </h3>
@@ -35,7 +64,35 @@ export function ExerciseCard({ exercise }: ExerciseCardProps) {
           )}
         </div>
         <div className="flex flex-col items-end gap-2">
-          <Dumbbell className="h-5 w-5 text-primary" />
+          <div className="flex items-center gap-2">
+            <Dumbbell className="h-5 w-5 text-primary" />
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Exercise</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to delete "{exercise.name}"? This will also delete all associated sessions. This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDelete} disabled={deleting}>
+                    {deleting ? "Deleting..." : "Delete"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
           {improvement && (
             <div className={`flex items-center gap-1 text-xs ${
               parseFloat(improvement) > 0 ? 'text-accent' : 'text-muted-foreground'

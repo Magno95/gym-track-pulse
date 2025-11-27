@@ -1,10 +1,11 @@
-import { Exercise } from "@/data/mockData";
+import { ExerciseWithSessions } from "@/lib/supabaseStore";
 import { ExerciseCard } from "./ExerciseCard";
 import { Dumbbell, Heart, Zap, Activity } from "lucide-react";
 
 interface CategorySectionProps {
   category: "arms" | "chest" | "back" | "legs";
-  exercises: Exercise[];
+  exercises: ExerciseWithSessions[];
+  onExerciseDeleted: () => void;
 }
 
 const categoryConfig = {
@@ -14,7 +15,7 @@ const categoryConfig = {
   legs: { icon: Zap, label: "Legs", color: "text-accent" },
 };
 
-export function CategorySection({ category, exercises }: CategorySectionProps) {
+export function CategorySection({ category, exercises, onExerciseDeleted }: CategorySectionProps) {
   const config = categoryConfig[category];
   const Icon = config.icon;
 
@@ -29,7 +30,7 @@ export function CategorySection({ category, exercises }: CategorySectionProps) {
       </div>
       <div className="grid gap-3">
         {exercises.map((exercise) => (
-          <ExerciseCard key={exercise.id} exercise={exercise} />
+          <ExerciseCard key={exercise.id} exercise={exercise} onDeleted={onExerciseDeleted} />
         ))}
       </div>
     </div>
