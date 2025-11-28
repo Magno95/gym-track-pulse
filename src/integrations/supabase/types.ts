@@ -46,6 +46,7 @@ export type Database = {
           id: string
           reps: number
           series: number
+          sets: Json | null
           value: number
           weight: number
         }
@@ -56,6 +57,7 @@ export type Database = {
           id?: string
           reps: number
           series: number
+          sets?: Json | null
           value: number
           weight: number
         }
@@ -66,6 +68,7 @@ export type Database = {
           id?: string
           reps?: number
           series?: number
+          sets?: Json | null
           value?: number
           weight?: number
         }
