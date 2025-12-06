@@ -39,7 +39,7 @@ export function SessionCard({ session }: SessionCardProps) {
             </div>
             <div>
               <p className="font-semibold text-foreground">
-                {format(new Date(session.date), "EEEE d MMMM", { locale: it })}
+                {format(new Date(session.date), "dd-MM-yyyy")}
               </p>
               <p className="text-sm text-muted-foreground">
                 {session.exercises.length} esercizi
