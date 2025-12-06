@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { format } from "date-fns";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabaseStore, ExerciseWithSessions } from "@/lib/supabaseStore";
 import { Button } from "@/components/ui/button";
@@ -129,11 +130,7 @@ export default function ExerciseDetail() {
                       <div className="flex items-center gap-2 mb-2">
                         <Calendar className="h-4 w-4 text-primary" />
                         <span className="font-medium text-foreground">
-                          {new Date(session.date).toLocaleDateString("en-US", {
-                            weekday: "short",
-                            month: "long",
-                            day: "numeric",
-                          })}
+                          {format(new Date(session.date), "dd-MM-yyyy")}
                         </span>
                       </div>
                       <div className="space-y-1 text-sm text-muted-foreground">
