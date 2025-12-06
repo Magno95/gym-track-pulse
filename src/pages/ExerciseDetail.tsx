@@ -17,9 +17,13 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { AddSessionDialog } from "@/components/AddSessionDialog";
+import { EditSessionDialog } from "@/components/EditSessionDialog";
 import { ArrowLeft, Calendar, TrendingUp, Trash2 } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { toast } from "sonner";
+import { Database } from "@/integrations/supabase/types";
+
+type Session = Database["public"]["Tables"]["sessions"]["Row"];
 
 export default function ExerciseDetail() {
   const { id } = useParams();
@@ -27,6 +31,7 @@ export default function ExerciseDetail() {
   const [exercise, setExercise] = useState<ExerciseWithSessions | null>(null);
   const [loading, setLoading] = useState(true);
   const [deletingSession, setDeletingSession] = useState<string | null>(null);
+  const [editingSession, setEditingSession] = useState<Session | null>(null);
 
   const loadExercise = async () => {
     if (!id) return;
@@ -47,6 +52,10 @@ export default function ExerciseDetail() {
   }, [id]);
 
   const handleSessionAdded = () => {
+    loadExercise();
+  };
+
+  const handleSessionUpdated = () => {
     loadExercise();
   };
 
@@ -112,6 +121,16 @@ export default function ExerciseDetail() {
         onSessionAdded={handleSessionAdded}
       />
 
+      {editingSession && (
+        <EditSessionDialog
+          session={editingSession}
+          exerciseName={exercise.name}
+          open={!!editingSession}
+          onOpenChange={(open) => !open && setEditingSession(null)}
+          onSessionUpdated={handleSessionUpdated}
+        />
+      )}
+
       <div className="container max-w-2xl mx-auto px-4 py-6">
         <Tabs defaultValue="sessions" className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-6">
@@ -124,7 +143,12 @@ export default function ExerciseDetail() {
               .slice()
               .reverse()
               .map((session) => (
-                <Card key={session.id} className="p-4 border-border/50 relative group" style={{ boxShadow: 'var(--shadow-card)' }}>
+                <Card 
+                  key={session.id} 
+                  className="p-4 border-border/50 relative group cursor-pointer hover:shadow-md transition-shadow" 
+                  style={{ boxShadow: 'var(--shadow-card)' }}
+                  onClick={() => setEditingSession(session)}
+                >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
@@ -150,11 +174,12 @@ export default function ExerciseDetail() {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                            onClick={(e) => e.stopPropagation()}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </AlertDialogTrigger>
-                        <AlertDialogContent>
+                        <AlertDialogContent onClick={(e) => e.stopPropagation()}>
                           <AlertDialogHeader>
                             <AlertDialogTitle>Delete Session</AlertDialogTitle>
                             <AlertDialogDescription>

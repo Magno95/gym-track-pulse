@@ -120,4 +120,34 @@ export const supabaseStore = {
 
     if (error) throw error;
   },
+
+  updateSession: async (
+    sessionId: string,
+    session: { date: string; sets: Array<{ reps: number; weight: number }> }
+  ): Promise<Session> => {
+    // Calculate total value from all sets
+    const value = session.sets.reduce((sum, set) => sum + (set.reps * set.weight), 0);
+    
+    // For backward compatibility, set series to number of sets, and use first set's values
+    const series = session.sets.length;
+    const reps = session.sets[0]?.reps || 0;
+    const weight = session.sets[0]?.weight || 0;
+    
+    const { data, error } = await supabase
+      .from("sessions")
+      .update({
+        date: session.date,
+        sets: session.sets,
+        series,
+        reps,
+        weight,
+        value,
+      })
+      .eq("id", sessionId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
 };
