@@ -113,12 +113,12 @@ export function EditSessionDialog({
         sets: data.sets as Array<{ reps: number; weight: number }>,
       });
       const totalValue = data.sets.reduce((sum, set) => sum + (set.reps * set.weight), 0);
-      toast.success(`Sessione aggiornata (Totale: ${totalValue})`);
+      toast.success(`Session updated (Total: ${totalValue})`);
       onOpenChange(false);
       onSessionUpdated();
     } catch (error) {
       console.error("Error updating session:", error);
-      toast.error("Errore nell'aggiornamento della sessione.");
+      toast.error("Failed to update session.");
     } finally {
       setLoading(false);
     }
@@ -128,9 +128,9 @@ export function EditSessionDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Modifica Sessione</DialogTitle>
+          <DialogTitle>Edit Session</DialogTitle>
           <DialogDescription>
-            Modifica la sessione per {exerciseName}.
+            Edit the session for {exerciseName}.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -140,7 +140,7 @@ export function EditSessionDialog({
               name="date"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Data</FormLabel>
+                  <FormLabel>Date</FormLabel>
                   <FormControl>
                     <Input type="date" {...field} autoFocus={false} />
                   </FormControl>
@@ -159,7 +159,7 @@ export function EditSessionDialog({
                   onClick={addSet}
                 >
                   <Plus className="h-4 w-4 mr-1" />
-                  Aggiungi Set
+                  Add Set
                 </Button>
               </div>
               
@@ -184,7 +184,7 @@ export function EditSessionDialog({
                       name={`sets.${index}.weight`}
                       render={({ field }) => (
                         <FormItem>
-                          {index === 0 && <FormLabel>Peso (kg)</FormLabel>}
+                          {index === 0 && <FormLabel>Weight (kg)</FormLabel>}
                           <FormControl>
                             <Input type="number" min="0" step="0.5" {...field} />
                           </FormControl>
@@ -215,10 +215,10 @@ export function EditSessionDialog({
                 onClick={() => onOpenChange(false)}
                 className="flex-1"
               >
-                Annulla
+                Cancel
               </Button>
               <Button type="submit" className="flex-1" disabled={loading}>
-                {loading ? "Salvataggio..." : "Salva"}
+                {loading ? "Saving..." : "Save"}
               </Button>
             </div>
           </form>
