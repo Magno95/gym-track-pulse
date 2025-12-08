@@ -142,7 +142,7 @@ export function EditSessionDialog({
                 <FormItem>
                   <FormLabel>Data</FormLabel>
                   <FormControl>
-                    <Input type="date" {...field} />
+                    <Input type="date" {...field} autoFocus={false} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
