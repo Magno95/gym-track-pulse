@@ -115,8 +115,8 @@ const Index = () => {
           {/* Tab Selector */}
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "exercises" | "sessions")} className="mb-4">
             <TabsList className="w-full">
-              <TabsTrigger value="exercises" className="flex-1">Esercizi</TabsTrigger>
-              <TabsTrigger value="sessions" className="flex-1">Sessioni</TabsTrigger>
+              <TabsTrigger value="exercises" className="flex-1">Exercises</TabsTrigger>
+              <TabsTrigger value="sessions" className="flex-1">Sessions</TabsTrigger>
             </TabsList>
           </Tabs>
           
@@ -128,7 +128,7 @@ const Index = () => {
       <div className="container max-w-2xl mx-auto px-4 py-6 space-y-6">
         {loading ? (
           <div className="text-center py-12">
-            <p className="text-muted-foreground">Caricamento...</p>
+            <p className="text-muted-foreground">Loading...</p>
           </div>
         ) : activeTab === "exercises" ? (
           <>
@@ -148,7 +148,7 @@ const Index = () => {
             
             {filteredExercises.length === 0 && !loading && (
               <div className="text-center py-12">
-                <p className="text-muted-foreground">Nessun esercizio trovato</p>
+                <p className="text-muted-foreground">No exercises found</p>
               </div>
             )}
           </>
@@ -162,7 +162,7 @@ const Index = () => {
               </div>
             ) : (
               <div className="text-center py-12">
-                <p className="text-muted-foreground">Nessuna sessione trovata</p>
+                <p className="text-muted-foreground">No sessions found</p>
               </div>
             )}
           </>

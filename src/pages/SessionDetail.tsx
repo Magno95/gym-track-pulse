@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, Dumbbell } from "lucide-react";
 import { format } from "date-fns";
-import { it } from "date-fns/locale";
+import { enUS } from "date-fns/locale";
 import { toast } from "sonner";
 
 interface SessionExercise {
@@ -71,7 +71,7 @@ const SessionDetail = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-muted-foreground">Caricamento...</p>
+        <p className="text-muted-foreground">Loading...</p>
       </div>
     );
   }
@@ -79,16 +79,16 @@ const SessionDetail = () => {
   if (!date || exercises.length === 0) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
-        <p className="text-muted-foreground">Sessione non trovata</p>
+        <p className="text-muted-foreground">Session not found</p>
         <Button onClick={() => navigate("/")}>
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Torna alla home
+          Back to home
         </Button>
       </div>
     );
   }
 
-  const formattedDate = format(new Date(date), "EEEE d MMMM yyyy", { locale: it });
+  const formattedDate = format(new Date(date), "EEEE, MMMM d, yyyy", { locale: enUS });
 
   return (
     <div className="min-h-screen bg-background pb-8">
@@ -104,7 +104,7 @@ const SessionDetail = () => {
                 {formattedDate}
               </h1>
               <p className="text-sm text-muted-foreground">
-                {exercises.length} esercizi • {totalValue.toLocaleString()} punti totali
+                {exercises.length} exercises • {totalValue.toLocaleString()} total points
               </p>
             </div>
           </div>
