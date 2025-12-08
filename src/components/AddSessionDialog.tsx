@@ -128,7 +128,7 @@ export function AddSessionDialog({
                 <FormItem>
                   <FormLabel>Date</FormLabel>
                   <FormControl>
-                    <Input type="date" {...field} />
+                    <Input type="date" {...field} autoFocus={false} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
