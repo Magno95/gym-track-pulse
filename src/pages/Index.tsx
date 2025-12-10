@@ -82,7 +82,7 @@ const Index = () => {
     );
   }, [exercises]);
 
-  const categories = ["arms", "chest", "back", "legs"] as const;
+  const categories = ["arms", "chest", "back", "legs", "core"] as const;
   type Category = typeof categories[number];
 
   return (
