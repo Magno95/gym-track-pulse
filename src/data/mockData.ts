@@ -1,7 +1,7 @@
 export interface Exercise {
   id: string;
   name: string;
-  category: "arms" | "chest" | "back" | "legs";
+  category: "arms" | "chest" | "back" | "legs" | "core";
   sessions: Session[];
 }
 
