@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabaseStore, ExerciseWithSessions } from "@/lib/supabaseStore";
 import { supabase } from "@/integrations/supabase/client";
-import { SearchBar } from "@/components/SearchBar";
 import { CategorySection } from "@/components/CategorySection";
 import { AddExerciseDialog } from "@/components/AddExerciseDialog";
 import { SessionCard, DaySession } from "@/components/SessionCard";
@@ -13,7 +12,6 @@ import { toast } from "sonner";
 
 const Index = () => {
   const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState("");
   const [exercises, setExercises] = useState<ExerciseWithSessions[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"exercises" | "sessions">("exercises");
@@ -48,10 +46,6 @@ const Index = () => {
     toast.success("Signed out successfully");
     navigate("/auth");
   };
-
-  const filteredExercises = exercises.filter((exercise) =>
-    exercise.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
 
   // Group sessions by date
   const daySessions = useMemo(() => {
@@ -88,12 +82,6 @@ const Index = () => {
     );
   }, [exercises]);
 
-  const filteredSessions = daySessions.filter((session) =>
-    session.exercises.some((ex) =>
-      ex.exerciseName.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-  );
-
   const categories = ["arms", "chest", "back", "legs"] as const;
   type Category = typeof categories[number];
 
@@ -119,8 +107,6 @@ const Index = () => {
               <TabsTrigger value="sessions" className="flex-1">Sessions</TabsTrigger>
             </TabsList>
           </Tabs>
-          
-          <SearchBar value={searchQuery} onChange={setSearchQuery} />
         </div>
       </div>
 
@@ -133,7 +119,7 @@ const Index = () => {
         ) : activeTab === "exercises" ? (
           <>
             {categories.map((category) => {
-              const categoryExercises = filteredExercises.filter(
+              const categoryExercises = exercises.filter(
                 (ex) => ex.category === category
               );
               return (
@@ -146,7 +132,7 @@ const Index = () => {
               );
             })}
             
-            {filteredExercises.length === 0 && !loading && (
+            {exercises.length === 0 && !loading && (
               <div className="text-center py-12">
                 <p className="text-muted-foreground">No exercises found</p>
               </div>
@@ -154,9 +140,9 @@ const Index = () => {
           </>
         ) : (
           <>
-            {filteredSessions.length > 0 ? (
+            {daySessions.length > 0 ? (
               <div className="space-y-3">
-                {filteredSessions.map((session) => (
+                {daySessions.map((session) => (
                   <SessionCard key={session.date} session={session} />
                 ))}
               </div>
