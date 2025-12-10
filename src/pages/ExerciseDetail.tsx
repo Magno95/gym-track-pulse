@@ -18,7 +18,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { AddSessionDialog } from "@/components/AddSessionDialog";
 import { EditSessionDialog } from "@/components/EditSessionDialog";
-import { ArrowLeft, Calendar, TrendingUp, Trash2 } from "lucide-react";
+import { EditExerciseDetailsDialog } from "@/components/EditExerciseDetailsDialog";
+import { ArrowLeft, Calendar, TrendingUp, Trash2, Edit, Image } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { toast } from "sonner";
 import { Database } from "@/integrations/supabase/types";
@@ -32,6 +33,7 @@ export default function ExerciseDetail() {
   const [loading, setLoading] = useState(true);
   const [deletingSession, setDeletingSession] = useState<string | null>(null);
   const [editingSession, setEditingSession] = useState<Session | null>(null);
+  const [editingDetails, setEditingDetails] = useState(false);
 
   const loadExercise = async () => {
     if (!id) return;
@@ -131,12 +133,60 @@ export default function ExerciseDetail() {
         />
       )}
 
+      <EditExerciseDetailsDialog
+        exerciseId={exercise.id}
+        currentImageUrl={exercise.image_url}
+        currentDescription={exercise.description}
+        open={editingDetails}
+        onOpenChange={setEditingDetails}
+        onDetailsUpdated={loadExercise}
+      />
+
       <div className="container max-w-2xl mx-auto px-4 py-6">
-        <Tabs defaultValue="sessions" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-6">
+        <Tabs defaultValue="details" className="w-full">
+          <TabsList className="grid w-full grid-cols-3 mb-6">
+            <TabsTrigger value="details">Details</TabsTrigger>
             <TabsTrigger value="sessions">Sessions</TabsTrigger>
             <TabsTrigger value="statistics">Statistics</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="details">
+            <Card className="p-6 border-border/50" style={{ boxShadow: 'var(--shadow-elevated)' }}>
+              {exercise.image_url ? (
+                <div className="mb-6">
+                  <img 
+                    src={exercise.image_url} 
+                    alt={exercise.name}
+                    className="w-full h-48 object-cover rounded-lg"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                </div>
+              ) : (
+                <div className="mb-6 w-full h-48 bg-muted rounded-lg flex items-center justify-center">
+                  <Image className="h-12 w-12 text-muted-foreground" />
+                </div>
+              )}
+              
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-foreground mb-2">Description</h3>
+                {exercise.description ? (
+                  <p className="text-muted-foreground whitespace-pre-wrap">{exercise.description}</p>
+                ) : (
+                  <p className="text-muted-foreground italic">No description added yet.</p>
+                )}
+              </div>
+
+              <Button 
+                onClick={() => setEditingDetails(true)}
+                className="w-full"
+              >
+                <Edit className="h-4 w-4 mr-2" />
+                {exercise.image_url || exercise.description ? "Edit Details" : "Add Details"}
+              </Button>
+            </Card>
+          </TabsContent>
 
           <TabsContent value="sessions" className="space-y-3">
             {exercise.sessions
