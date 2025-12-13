@@ -113,6 +113,14 @@ export default function ExerciseDetail() {
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <h1 className="text-2xl font-bold text-foreground flex-1">{exercise.name}</h1>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setEditingDetails(true)}
+              className="hover:bg-secondary"
+            >
+              <Edit className="h-5 w-5" />
+            </Button>
           </div>
         </div>
       </div>
@@ -151,25 +159,23 @@ export default function ExerciseDetail() {
           </TabsList>
 
           <TabsContent value="details">
-            <Card className="p-6 border-border/50" style={{ boxShadow: 'var(--shadow-elevated)' }}>
+            <div className="flex flex-col items-center">
               {exercise.image_url ? (
-                <div className="mb-6">
-                  <img 
-                    src={exercise.image_url} 
-                    alt={exercise.name}
-                    className="w-full h-48 object-cover rounded-lg"
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none';
-                    }}
-                  />
-                </div>
+                <img 
+                  src={exercise.image_url} 
+                  alt={exercise.name}
+                  className="w-48 h-48 object-cover rounded-full mb-6"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
               ) : (
-                <div className="mb-6 w-full h-48 bg-muted rounded-lg flex items-center justify-center">
+                <div className="w-48 h-48 bg-muted rounded-full flex items-center justify-center mb-6">
                   <Image className="h-12 w-12 text-muted-foreground" />
                 </div>
               )}
               
-              <div className="mb-6">
+              <div className="w-full">
                 <h3 className="text-lg font-semibold text-foreground mb-2">Description</h3>
                 {exercise.description ? (
                   <p className="text-muted-foreground whitespace-pre-wrap">{exercise.description}</p>
@@ -177,15 +183,7 @@ export default function ExerciseDetail() {
                   <p className="text-muted-foreground italic">No description added yet.</p>
                 )}
               </div>
-
-              <Button 
-                onClick={() => setEditingDetails(true)}
-                className="w-full"
-              >
-                <Edit className="h-4 w-4 mr-2" />
-                {exercise.image_url || exercise.description ? "Edit Details" : "Add Details"}
-              </Button>
-            </Card>
+            </div>
           </TabsContent>
 
           <TabsContent value="sessions" className="space-y-3">
