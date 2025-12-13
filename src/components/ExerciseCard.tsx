@@ -51,17 +51,17 @@ export function ExerciseCard({ exercise, onDeleted }: ExerciseCardProps) {
       className="p-0 hover:shadow-lg transition-all animate-fade-in border-border/50 relative group overflow-hidden"
       style={{ boxShadow: 'var(--shadow-card)' }}
     >
-      <div className="flex">
+      <div className="flex h-full">
         {/* Image on the left */}
         <div 
-          className="w-20 h-20 flex-shrink-0 cursor-pointer"
+          className="w-20 flex-shrink-0 cursor-pointer self-stretch"
           onClick={() => navigate(`/exercise/${exercise.id}`)}
         >
           {exercise.image_url ? (
             <img 
               src={exercise.image_url} 
               alt={exercise.name}
-              className="w-full h-full object-cover rounded-l-xl"
+              className="w-full h-full object-cover rounded-l-xl block"
               onError={(e) => {
                 e.currentTarget.style.display = 'none';
                 e.currentTarget.nextElementSibling?.classList.remove('hidden');
