@@ -4,7 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { CategorySection } from "@/components/CategorySection";
 import { AddExerciseDialog } from "@/components/AddExerciseDialog";
 import { SessionCard, DaySession } from "@/components/SessionCard";
-import { Dumbbell, LogOut } from "lucide-react";
+import { LogOut } from "lucide-react";
+import gymTrackLogo from "@/assets/gym-track-logo.jpg";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useNavigate } from "react-router-dom";
@@ -91,9 +92,11 @@ const Index = () => {
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border/50">
         <div className="container max-w-2xl mx-auto px-4 py-4">
           <div className="flex items-center gap-3 mb-4">
-            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-              <Dumbbell className="h-6 w-6 text-primary-foreground" />
-            </div>
+            <img 
+              src={gymTrackLogo} 
+              alt="GymTrack Logo" 
+              className="h-10 w-10 rounded-full object-cover"
+            />
             <h1 className="text-2xl font-bold text-foreground flex-1">GymTrack</h1>
             <Button variant="ghost" size="icon" onClick={handleSignOut}>
               <LogOut className="h-5 w-5" />
