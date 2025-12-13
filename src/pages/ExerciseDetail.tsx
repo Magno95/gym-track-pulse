@@ -159,19 +159,19 @@ export default function ExerciseDetail() {
           </TabsList>
 
           <TabsContent value="details">
-            <div className="flex flex-col items-center">
+            <div className="flex flex-col">
               {exercise.image_url ? (
                 <img 
                   src={exercise.image_url} 
                   alt={exercise.name}
-                  className="w-48 h-48 object-cover rounded-full mb-6"
+                  className="w-full aspect-square object-cover rounded-xl mb-6"
                   onError={(e) => {
                     e.currentTarget.style.display = 'none';
                   }}
                 />
               ) : (
-                <div className="w-48 h-48 bg-muted rounded-full flex items-center justify-center mb-6">
-                  <Image className="h-12 w-12 text-muted-foreground" />
+                <div className="w-full aspect-square bg-muted rounded-xl flex items-center justify-center mb-6">
+                  <Image className="h-16 w-16 text-muted-foreground" />
                 </div>
               )}
               
