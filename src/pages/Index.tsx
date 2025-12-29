@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { CategorySection } from "@/components/CategorySection";
 import { AddExerciseDialog } from "@/components/AddExerciseDialog";
 import { SessionCard, DaySession } from "@/components/SessionCard";
+import { SessionStatistics } from "@/components/SessionStatistics";
 import { LogOut } from "lucide-react";
 import gymTrackLogo from "@/assets/gym-track-logo.jpg";
 import { Button } from "@/components/ui/button";
@@ -144,10 +145,13 @@ const Index = () => {
         ) : (
           <>
             {daySessions.length > 0 ? (
-              <div className="space-y-3">
-                {daySessions.map((session) => (
-                  <SessionCard key={session.date} session={session} />
-                ))}
+              <div className="space-y-6">
+                <SessionStatistics sessions={daySessions} />
+                <div className="space-y-3">
+                  {daySessions.map((session) => (
+                    <SessionCard key={session.date} session={session} />
+                  ))}
+                </div>
               </div>
             ) : (
               <div className="text-center py-12">
