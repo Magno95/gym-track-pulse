@@ -5,6 +5,7 @@ import { CategorySection } from "@/components/CategorySection";
 import { AddExerciseDialog } from "@/components/AddExerciseDialog";
 import { SessionCard, DaySession } from "@/components/SessionCard";
 import { SessionStatistics } from "@/components/SessionStatistics";
+import { ExerciseSearchBar } from "@/components/ExerciseSearchBar";
 import { LogOut } from "lucide-react";
 import gymTrackLogo from "@/assets/gym-track-logo.jpg";
 import { Button } from "@/components/ui/button";
@@ -110,6 +111,11 @@ const Index = () => {
               <TabsTrigger value="sessions" className="flex-1">Sessions</TabsTrigger>
             </TabsList>
           </Tabs>
+
+          {/* Search Bar - only visible on exercises tab */}
+          {activeTab === "exercises" && (
+            <ExerciseSearchBar exercises={exercises} />
+          )}
         </div>
       </div>
 
