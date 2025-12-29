@@ -11,7 +11,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Dumbbell, TrendingUp, Trash2, Image } from "lucide-react";
+import { TrendingUp, Trash2, Image } from "lucide-react";
+import { getCategoryConfig } from "@/lib/categoryIcons";
 import { ExerciseWithSessions, supabaseStore } from "@/lib/supabaseStore";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -27,6 +28,9 @@ export function ExerciseCard({ exercise, onDeleted }: ExerciseCardProps) {
   const [deleting, setDeleting] = useState(false);
   const latestSession = exercise.sessions[exercise.sessions.length - 1];
   const previousSession = exercise.sessions[exercise.sessions.length - 2];
+  
+  const categoryInfo = getCategoryConfig(exercise.category);
+  const CategoryIcon = categoryInfo.icon;
   
   const improvement = previousSession 
     ? ((latestSession.value - previousSession.value) / previousSession.value * 100).toFixed(1)
@@ -88,7 +92,7 @@ export function ExerciseCard({ exercise, onDeleted }: ExerciseCardProps) {
           </div>
           <div className="flex flex-col items-end gap-1">
             <div className="flex items-center gap-1">
-              <Dumbbell className="h-4 w-4 text-primary" />
+              <CategoryIcon className={`h-4 w-4 ${categoryInfo.color}`} />
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button

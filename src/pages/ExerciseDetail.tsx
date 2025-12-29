@@ -20,6 +20,7 @@ import { AddSessionDialog } from "@/components/AddSessionDialog";
 import { EditSessionDialog } from "@/components/EditSessionDialog";
 import { EditExerciseDetailsDialog } from "@/components/EditExerciseDetailsDialog";
 import { ArrowLeft, Calendar, TrendingUp, Trash2, Edit, Image } from "lucide-react";
+import { getCategoryConfig } from "@/lib/categoryIcons";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { toast } from "sonner";
 import { Database } from "@/integrations/supabase/types";
@@ -112,6 +113,11 @@ export default function ExerciseDetail() {
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>
+            {(() => {
+              const categoryInfo = getCategoryConfig(exercise.category);
+              const CategoryIcon = categoryInfo.icon;
+              return <CategoryIcon className={`h-6 w-6 ${categoryInfo.color}`} />;
+            })()}
             <h1 className="text-2xl font-bold text-foreground flex-1">{exercise.name}</h1>
             <Button
               variant="ghost"

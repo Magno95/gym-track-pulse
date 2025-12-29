@@ -84,8 +84,7 @@ const Index = () => {
     );
   }, [exercises]);
 
-  const categories = ["arms", "chest", "back", "legs", "core"] as const;
-  type Category = typeof categories[number];
+  const categoriesList = ["arms", "chest", "back", "legs", "core", "cardio"] as const;
 
   return (
     <div className="min-h-screen bg-background pb-8">
@@ -122,14 +121,14 @@ const Index = () => {
           </div>
         ) : activeTab === "exercises" ? (
           <>
-            {categories.map((category) => {
+            {categoriesList.map((category) => {
               const categoryExercises = exercises.filter(
                 (ex) => ex.category === category
               );
               return (
                 <CategorySection
                   key={category}
-                  category={category as Category}
+                  category={category}
                   exercises={categoryExercises}
                   onExerciseDeleted={handleExerciseDeleted}
                 />
