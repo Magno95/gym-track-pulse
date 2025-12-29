@@ -1,20 +1,12 @@
 import { ExerciseWithSessions } from "@/lib/supabaseStore";
 import { ExerciseCard } from "./ExerciseCard";
-import { Dumbbell, Heart, Zap, Activity, Target } from "lucide-react";
+import { Category, categoryConfig } from "@/lib/categoryIcons";
 
 interface CategorySectionProps {
-  category: "arms" | "chest" | "back" | "legs" | "core";
+  category: Category;
   exercises: ExerciseWithSessions[];
   onExerciseDeleted: () => void;
 }
-
-const categoryConfig = {
-  arms: { icon: Dumbbell, label: "Arms", color: "text-primary" },
-  chest: { icon: Heart, label: "Chest", color: "text-accent" },
-  back: { icon: Activity, label: "Back", color: "text-primary" },
-  legs: { icon: Zap, label: "Legs", color: "text-accent" },
-  core: { icon: Target, label: "Core", color: "text-primary" },
-};
 
 export function CategorySection({ category, exercises, onExerciseDeleted }: CategorySectionProps) {
   const config = categoryConfig[category];

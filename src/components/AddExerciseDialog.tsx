@@ -37,7 +37,7 @@ const exerciseSchema = z.object({
     .trim()
     .min(1, { message: "Exercise name is required" })
     .max(50, { message: "Name must be less than 50 characters" }),
-  category: z.enum(["arms", "chest", "back", "legs", "core"], {
+  category: z.enum(["arms", "chest", "back", "legs", "core", "cardio"], {
     required_error: "Please select a category",
   }),
 });
@@ -130,6 +130,7 @@ export function AddExerciseDialog({ onExerciseAdded }: AddExerciseDialogProps) {
                       <SelectItem value="back">Back</SelectItem>
                       <SelectItem value="legs">Legs</SelectItem>
                       <SelectItem value="core">Core</SelectItem>
+                      <SelectItem value="cardio">Cardio</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
