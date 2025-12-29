@@ -35,6 +35,7 @@ export default function ExerciseDetail() {
   const [deletingSession, setDeletingSession] = useState<string | null>(null);
   const [editingSession, setEditingSession] = useState<Session | null>(null);
   const [editingDetails, setEditingDetails] = useState(false);
+  const [activeTab, setActiveTab] = useState("details");
 
   const loadExercise = async () => {
     if (!id) return;
@@ -157,7 +158,7 @@ export default function ExerciseDetail() {
       />
 
       <div className="container max-w-2xl mx-auto px-4 py-6">
-        <Tabs defaultValue="details" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-3 mb-6">
             <TabsTrigger value="details">Details</TabsTrigger>
             <TabsTrigger value="sessions">Sessions</TabsTrigger>
