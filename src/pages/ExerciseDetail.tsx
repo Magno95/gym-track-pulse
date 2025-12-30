@@ -211,12 +211,6 @@ export default function ExerciseDetail() {
                         <span className="font-medium text-foreground">
                           {format(new Date(session.date), "dd-MM-yyyy")}
                         </span>
-                        {session.superset_id && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-accent/20 text-accent">
-                            <Zap className="h-3 w-3" />
-                            Super Set {session.is_superset_secondary && "(1.2x)"}
-                          </span>
-                        )}
                       </div>
                       <div className="space-y-1 text-sm text-muted-foreground">
                         <p>Series: {session.series}</p>
@@ -260,6 +254,12 @@ export default function ExerciseDetail() {
                       </AlertDialog>
                     </div>
                   </div>
+                  {session.superset_id && (
+                    <span className="absolute bottom-2 right-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-accent/20 text-accent">
+                      <Zap className="h-3 w-3" />
+                      Super Set {session.is_superset_secondary && "(1.2x)"}
+                    </span>
+                  )}
                 </Card>
               ))}
           </TabsContent>
