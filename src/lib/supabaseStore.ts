@@ -103,6 +103,60 @@ export const supabaseStore = {
     return data;
   },
 
+  addSupersetSession: async (
+    primaryExerciseId: string,
+    secondaryExerciseId: string,
+    date: string,
+    primarySets: Array<{ reps: number; weight: number }>,
+    secondarySets: Array<{ reps: number; weight: number }>
+  ): Promise<{ primary: Session; secondary: Session }> => {
+    const supersetId = crypto.randomUUID();
+    
+    // Calculate values
+    const primaryValue = primarySets.reduce((sum, set) => sum + (set.reps * set.weight), 0);
+    const secondaryValue = Math.round(secondarySets.reduce((sum, set) => sum + (set.reps * set.weight), 0) * 1.2);
+    
+    // Insert primary session
+    const { data: primaryData, error: primaryError } = await supabase
+      .from("sessions")
+      .insert({
+        date,
+        exercise_id: primaryExerciseId,
+        sets: primarySets,
+        series: primarySets.length,
+        reps: primarySets[0]?.reps || 0,
+        weight: primarySets[0]?.weight || 0,
+        value: primaryValue,
+        superset_id: supersetId,
+        is_superset_secondary: false,
+      })
+      .select()
+      .single();
+
+    if (primaryError) throw primaryError;
+
+    // Insert secondary session with 1.2x multiplier
+    const { data: secondaryData, error: secondaryError } = await supabase
+      .from("sessions")
+      .insert({
+        date,
+        exercise_id: secondaryExerciseId,
+        sets: secondarySets,
+        series: secondarySets.length,
+        reps: secondarySets[0]?.reps || 0,
+        weight: secondarySets[0]?.weight || 0,
+        value: secondaryValue,
+        superset_id: supersetId,
+        is_superset_secondary: true,
+      })
+      .select()
+      .single();
+
+    if (secondaryError) throw secondaryError;
+
+    return { primary: primaryData, secondary: secondaryData };
+  },
+
   deleteExercise: async (id: string): Promise<void> => {
     const { error } = await supabase
       .from("exercises")
