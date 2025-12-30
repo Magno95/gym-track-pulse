@@ -50,9 +50,11 @@ export type Database = {
           date: string
           exercise_id: string
           id: string
+          is_superset_secondary: boolean | null
           reps: number
           series: number
           sets: Json | null
+          superset_id: string | null
           value: number
           weight: number
         }
@@ -61,9 +63,11 @@ export type Database = {
           date: string
           exercise_id: string
           id?: string
+          is_superset_secondary?: boolean | null
           reps: number
           series: number
           sets?: Json | null
+          superset_id?: string | null
           value: number
           weight: number
         }
@@ -72,9 +76,11 @@ export type Database = {
           date?: string
           exercise_id?: string
           id?: string
+          is_superset_secondary?: boolean | null
           reps?: number
           series?: number
           sets?: Json | null
+          superset_id?: string | null
           value?: number
           weight?: number
         }

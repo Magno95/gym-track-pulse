@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -20,8 +20,11 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
-import { supabaseStore } from "@/lib/supabaseStore";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
+import { Plus, Zap, X } from "lucide-react";
+import { supabaseStore, ExerciseWithSessions } from "@/lib/supabaseStore";
+import { getCategoryIcon } from "@/lib/categoryIcons";
 import { toast } from "sonner";
 
 const setSchema = z.object({
@@ -38,6 +41,9 @@ const setSchema = z.object({
 const sessionSchema = z.object({
   date: z.string().min(1, { message: "Date is required" }),
   sets: z.array(setSchema).min(1, { message: "Must add at least 1 set" }),
+  isSuperSet: z.boolean().default(false),
+  secondaryExerciseId: z.string().optional(),
+  secondarySets: z.array(setSchema).optional(),
 });
 
 type SessionFormValues = z.infer<typeof sessionSchema>;
@@ -55,14 +61,35 @@ export function AddSessionDialog({
 }: AddSessionDialogProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [exercises, setExercises] = useState<ExerciseWithSessions[]>([]);
+  const [selectedSecondaryExercise, setSelectedSecondaryExercise] = useState<ExerciseWithSessions | null>(null);
 
   const form = useForm<SessionFormValues>({
     resolver: zodResolver(sessionSchema),
     defaultValues: {
       date: new Date().toISOString().split("T")[0],
       sets: [{ reps: 10, weight: 0 }],
+      isSuperSet: false,
+      secondaryExerciseId: undefined,
+      secondarySets: [{ reps: 10, weight: 0 }],
     },
   });
+
+  const isSuperSet = form.watch("isSuperSet");
+
+  useEffect(() => {
+    const loadExercises = async () => {
+      try {
+        const data = await supabaseStore.getAll();
+        setExercises(data.filter(ex => ex.id !== exerciseId));
+      } catch (error) {
+        console.error("Error loading exercises:", error);
+      }
+    };
+    if (open) {
+      loadExercises();
+    }
+  }, [open, exerciseId]);
 
   const addSet = () => {
     const currentSets = form.getValues("sets");
@@ -77,20 +104,62 @@ export function AddSessionDialog({
     }
   };
 
+  const addSecondarySet = () => {
+    const currentSets = form.getValues("secondarySets") || [];
+    const lastSet = currentSets[currentSets.length - 1];
+    form.setValue("secondarySets", [...currentSets, { reps: lastSet?.reps ?? 10, weight: lastSet?.weight ?? 0 }]);
+  };
+
+  const removeSecondarySet = (index: number) => {
+    const currentSets = form.getValues("secondarySets") || [];
+    if (currentSets.length > 1) {
+      form.setValue("secondarySets", currentSets.filter((_, i) => i !== index));
+    }
+  };
+
+  const handleSelectSecondaryExercise = (exercise: ExerciseWithSessions) => {
+    setSelectedSecondaryExercise(exercise);
+    form.setValue("secondaryExerciseId", exercise.id);
+  };
+
+  const handleClearSecondaryExercise = () => {
+    setSelectedSecondaryExercise(null);
+    form.setValue("secondaryExerciseId", undefined);
+  };
+
   const onSubmit = async (data: SessionFormValues) => {
     try {
       setLoading(true);
-      await supabaseStore.addSession(exerciseId, {
-        date: data.date,
-        sets: data.sets as Array<{ reps: number; weight: number }>,
-      });
-      const totalValue = data.sets.reduce((sum, set) => sum + (set.reps * set.weight), 0);
-      toast.success(`${data.sets.length} sets logged (Total: ${totalValue})`);
+      
+      if (data.isSuperSet && data.secondaryExerciseId && data.secondarySets?.length) {
+        await supabaseStore.addSupersetSession(
+          exerciseId,
+          data.secondaryExerciseId,
+          data.date,
+          data.sets as Array<{ reps: number; weight: number }>,
+          data.secondarySets as Array<{ reps: number; weight: number }>
+        );
+        const primaryValue = data.sets.reduce((sum, set) => sum + (set.reps * set.weight), 0);
+        const secondaryValue = Math.round(data.secondarySets.reduce((sum, set) => sum + (set.reps * set.weight), 0) * 1.2);
+        toast.success(`Superset logged! (${primaryValue} + ${secondaryValue} with 1.2x bonus)`);
+      } else {
+        await supabaseStore.addSession(exerciseId, {
+          date: data.date,
+          sets: data.sets as Array<{ reps: number; weight: number }>,
+        });
+        const totalValue = data.sets.reduce((sum, set) => sum + (set.reps * set.weight), 0);
+        toast.success(`${data.sets.length} sets logged (Total: ${totalValue})`);
+      }
+      
       const lastSet = data.sets[data.sets.length - 1];
       form.reset({
         date: new Date().toISOString().split("T")[0],
         sets: [{ reps: lastSet.reps, weight: lastSet.weight }],
+        isSuperSet: false,
+        secondaryExerciseId: undefined,
+        secondarySets: [{ reps: 10, weight: 0 }],
       });
+      setSelectedSecondaryExercise(null);
       setOpen(false);
       onSessionAdded();
     } catch (error) {
@@ -99,6 +168,70 @@ export function AddSessionDialog({
     } finally {
       setLoading(false);
     }
+  };
+
+  const renderSetsForm = (
+    fieldPrefix: "sets" | "secondarySets",
+    label: string,
+    addFn: () => void,
+    removeFn: (index: number) => void
+  ) => {
+    const sets = form.watch(fieldPrefix) || [];
+    return (
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <FormLabel>{label}</FormLabel>
+          <Button type="button" size="sm" variant="outline" onClick={addFn}>
+            <Plus className="h-4 w-4 mr-1" />
+            Add Set
+          </Button>
+        </div>
+        
+        {sets.map((_, index) => (
+          <div key={index} className="flex gap-2 items-start">
+            <div className="flex-1 grid grid-cols-2 gap-2">
+              <FormField
+                control={form.control}
+                name={`${fieldPrefix}.${index}.reps`}
+                render={({ field }) => (
+                  <FormItem>
+                    {index === 0 && <FormLabel className="text-xs">Reps</FormLabel>}
+                    <FormControl>
+                      <Input type="number" min="1" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name={`${fieldPrefix}.${index}.weight`}
+                render={({ field }) => (
+                  <FormItem>
+                    {index === 0 && <FormLabel className="text-xs">Weight (kg)</FormLabel>}
+                    <FormControl>
+                      <Input type="number" min="0" step="0.5" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            {sets.length > 1 && (
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                onClick={() => removeFn(index)}
+                className={index === 0 ? "mt-6" : ""}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        ))}
+      </div>
+    );
   };
 
   return (
@@ -112,7 +245,7 @@ export function AddSessionDialog({
           <Plus className="h-6 w-6" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Log New Session</DialogTitle>
           <DialogDescription>
@@ -135,64 +268,101 @@ export function AddSessionDialog({
               )}
             />
             
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <FormLabel>Sets</FormLabel>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={addSet}
-                >
-                  <Plus className="h-4 w-4 mr-1" />
-                  Add Set
-                </Button>
-              </div>
-              
-              {form.watch("sets").map((_, index) => (
-                <div key={index} className="flex gap-2 items-start">
-                  <div className="flex-1 grid grid-cols-2 gap-2">
-                    <FormField
-                      control={form.control}
-                      name={`sets.${index}.reps`}
-                      render={({ field }) => (
-                        <FormItem>
-                          {index === 0 && <FormLabel>Reps</FormLabel>}
-                          <FormControl>
-                            <Input type="number" min="1" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name={`sets.${index}.weight`}
-                      render={({ field }) => (
-                        <FormItem>
-                          {index === 0 && <FormLabel>Weight (kg)</FormLabel>}
-                          <FormControl>
-                            <Input type="number" min="0" step="0.5" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  {form.watch("sets").length > 1 && (
-                    <Button
-                      type="button"
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => removeSet(index)}
-                      className={index === 0 ? "mt-8" : ""}
-                    >
-                      <Plus className="h-4 w-4 rotate-45" />
-                    </Button>
-                  )}
-                </div>
-              ))}
+            {/* Primary Exercise Sets */}
+            <div className="p-3 rounded-lg bg-muted/50 border border-border">
+              <p className="text-sm font-medium text-foreground mb-3">{exerciseName}</p>
+              {renderSetsForm("sets", "Sets", addSet, removeSet)}
             </div>
+
+            {/* Super Set Toggle */}
+            <div className="flex items-center justify-between p-3 rounded-lg bg-accent/10 border border-accent/20">
+              <div className="flex items-center gap-2">
+                <Zap className="h-4 w-4 text-accent" />
+                <span className="text-sm font-medium">Super Set</span>
+                <Badge variant="secondary" className="text-xs">1.2x bonus</Badge>
+              </div>
+              <FormField
+                control={form.control}
+                name="isSuperSet"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={(checked) => {
+                          field.onChange(checked);
+                          if (!checked) {
+                            handleClearSecondaryExercise();
+                          }
+                        }}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Secondary Exercise Selection */}
+            {isSuperSet && (
+              <div className="space-y-3">
+                {!selectedSecondaryExercise ? (
+                  <div className="space-y-2">
+                    <FormLabel>Select Secondary Exercise</FormLabel>
+                    <div className="max-h-40 overflow-y-auto rounded-lg border border-border bg-popover">
+                      {exercises.map((exercise) => {
+                        const CategoryIcon = getCategoryIcon(exercise.category);
+                        return (
+                          <button
+                            key={exercise.id}
+                            type="button"
+                            onClick={() => handleSelectSecondaryExercise(exercise)}
+                            className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-accent transition-colors"
+                          >
+                            <CategoryIcon className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm">{exercise.name}</span>
+                            <span className="text-xs text-muted-foreground ml-auto capitalize">
+                              {exercise.category}
+                            </span>
+                          </button>
+                        );
+                      })}
+                      {exercises.length === 0 && (
+                        <p className="text-sm text-muted-foreground text-center py-4">
+                          No other exercises available
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-3 rounded-lg bg-accent/5 border border-accent/20">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        {(() => {
+                          const CategoryIcon = getCategoryIcon(selectedSecondaryExercise.category);
+                          return <CategoryIcon className="h-4 w-4 text-accent" />;
+                        })()}
+                        <p className="text-sm font-medium text-foreground">
+                          {selectedSecondaryExercise.name}
+                        </p>
+                        <Badge variant="outline" className="text-xs text-accent border-accent">
+                          1.2x
+                        </Badge>
+                      </div>
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        onClick={handleClearSecondaryExercise}
+                        className="h-6 w-6"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    {renderSetsForm("secondarySets", "Sets", addSecondarySet, removeSecondarySet)}
+                  </div>
+                )}
+              </div>
+            )}
             
             <div className="flex gap-3 pt-4">
               <Button
@@ -203,7 +373,11 @@ export function AddSessionDialog({
               >
                 Cancel
               </Button>
-              <Button type="submit" className="flex-1" disabled={loading}>
+              <Button 
+                type="submit" 
+                className="flex-1" 
+                disabled={loading || (isSuperSet && !selectedSecondaryExercise)}
+              >
                 {loading ? "Logging..." : "Log Session"}
               </Button>
             </div>
