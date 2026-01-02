@@ -51,12 +51,14 @@ type SessionFormValues = z.infer<typeof sessionSchema>;
 interface AddSessionDialogProps {
   exerciseId: string;
   exerciseName: string;
+  supersetMultiplier?: number | null;
   onSessionAdded: () => void;
 }
 
 export function AddSessionDialog({
   exerciseId,
   exerciseName,
+  supersetMultiplier = 1.2,
   onSessionAdded,
 }: AddSessionDialogProps) {
   const [open, setOpen] = useState(false);
@@ -127,6 +129,8 @@ export function AddSessionDialog({
     form.setValue("secondaryExerciseId", undefined);
   };
 
+  const multiplier = supersetMultiplier || 1.2;
+
   const onSubmit = async (data: SessionFormValues) => {
     try {
       setLoading(true);
@@ -137,11 +141,12 @@ export function AddSessionDialog({
           data.secondaryExerciseId,
           data.date,
           data.sets as Array<{ reps: number; weight: number }>,
-          data.secondarySets as Array<{ reps: number; weight: number }>
+          data.secondarySets as Array<{ reps: number; weight: number }>,
+          multiplier
         );
         const primaryValue = data.sets.reduce((sum, set) => sum + (set.reps * set.weight), 0);
-        const secondaryValue = Math.round(data.secondarySets.reduce((sum, set) => sum + (set.reps * set.weight), 0) * 1.2);
-        toast.success(`Superset logged! (${primaryValue} + ${secondaryValue} with 1.2x bonus)`);
+        const secondaryValue = Math.round(data.secondarySets.reduce((sum, set) => sum + (set.reps * set.weight), 0) * multiplier);
+        toast.success(`Superset logged! (${primaryValue} + ${secondaryValue} with ${multiplier}x bonus)`);
       } else {
         await supabaseStore.addSession(exerciseId, {
           date: data.date,
@@ -279,7 +284,7 @@ export function AddSessionDialog({
               <div className="flex items-center gap-2">
                 <Zap className="h-4 w-4 text-accent" />
                 <span className="text-sm font-medium">Super Set</span>
-                <Badge variant="secondary" className="text-xs">1.2x bonus</Badge>
+                <Badge variant="secondary" className="text-xs">{multiplier}x bonus</Badge>
               </div>
               <FormField
                 control={form.control}
@@ -345,7 +350,7 @@ export function AddSessionDialog({
                           {selectedSecondaryExercise.name}
                         </p>
                         <Badge variant="outline" className="text-xs text-accent border-accent">
-                          1.2x
+                          {multiplier}x
                         </Badge>
                       </div>
                       <Button
