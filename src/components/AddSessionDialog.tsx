@@ -48,9 +48,21 @@ const sessionSchema = z.object({
 
 type SessionFormValues = z.infer<typeof sessionSchema>;
 
+type UnitType = "weight" | "distance" | "time";
+
+const getUnitLabel = (unit: UnitType): string => {
+  switch (unit) {
+    case "weight": return "Weight (kg)";
+    case "distance": return "Distance (m)";
+    case "time": return "Time (s)";
+    default: return "Weight (kg)";
+  }
+};
+
 interface AddSessionDialogProps {
   exerciseId: string;
   exerciseName: string;
+  unit?: string | null;
   supersetMultiplier?: number | null;
   onSessionAdded: () => void;
 }
@@ -58,6 +70,7 @@ interface AddSessionDialogProps {
 export function AddSessionDialog({
   exerciseId,
   exerciseName,
+  unit = "weight",
   supersetMultiplier = 1.2,
   onSessionAdded,
 }: AddSessionDialogProps) {
@@ -175,11 +188,14 @@ export function AddSessionDialog({
     }
   };
 
+  const unitLabel = getUnitLabel((unit || "weight") as UnitType);
+
   const renderSetsForm = (
     fieldPrefix: "sets" | "secondarySets",
     label: string,
     addFn: () => void,
-    removeFn: (index: number) => void
+    removeFn: (index: number) => void,
+    displayUnitLabel: string
   ) => {
     const sets = form.watch(fieldPrefix) || [];
     return (
@@ -213,7 +229,7 @@ export function AddSessionDialog({
                 name={`${fieldPrefix}.${index}.weight`}
                 render={({ field }) => (
                   <FormItem>
-                    {index === 0 && <FormLabel className="text-xs">Weight (kg)</FormLabel>}
+                    {index === 0 && <FormLabel className="text-xs">{displayUnitLabel}</FormLabel>}
                     <FormControl>
                       <Input type="number" min="0" step="0.5" {...field} />
                     </FormControl>
@@ -276,7 +292,7 @@ export function AddSessionDialog({
             {/* Primary Exercise Sets */}
             <div className="p-3 rounded-lg bg-muted/50 border border-border">
               <p className="text-sm font-medium text-foreground mb-3">{exerciseName}</p>
-              {renderSetsForm("sets", "Sets", addSet, removeSet)}
+              {renderSetsForm("sets", "Sets", addSet, removeSet, unitLabel)}
             </div>
 
             {/* Super Set Toggle */}
@@ -363,7 +379,7 @@ export function AddSessionDialog({
                         <X className="h-4 w-4" />
                       </Button>
                     </div>
-                    {renderSetsForm("secondarySets", "Sets", addSecondarySet, removeSecondarySet)}
+                    {renderSetsForm("secondarySets", "Sets", addSecondarySet, removeSecondarySet, getUnitLabel((selectedSecondaryExercise.unit || "weight") as UnitType))}
                   </div>
                 )}
               </div>

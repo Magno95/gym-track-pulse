@@ -135,6 +135,7 @@ export default function ExerciseDetail() {
       <AddSessionDialog
         exerciseId={exercise.id}
         exerciseName={exercise.name}
+        unit={exercise.unit}
         supersetMultiplier={exercise.superset_multiplier}
         onSessionAdded={handleSessionAdded}
       />
@@ -218,7 +219,9 @@ export default function ExerciseDetail() {
                       <div className="space-y-1 text-sm text-muted-foreground">
                         <p>Series: {session.series}</p>
                         <p>Reps: {session.reps}</p>
-                        <p>Weight: {session.weight} kg</p>
+                        <p>
+                          {exercise.unit === "distance" ? "Distance" : exercise.unit === "time" ? "Time" : "Weight"}: {session.weight} {exercise.unit === "distance" ? "m" : exercise.unit === "time" ? "s" : "kg"}
+                        </p>
                       </div>
                     </div>
                     <div className="flex items-start gap-2">
