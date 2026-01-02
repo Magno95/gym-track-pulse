@@ -144,6 +144,7 @@ export default function ExerciseDetail() {
         <EditSessionDialog
           session={editingSession}
           exerciseName={exercise.name}
+          unit={exercise.unit}
           open={!!editingSession}
           onOpenChange={(open) => !open && setEditingSession(null)}
           onSessionUpdated={handleSessionUpdated}
