@@ -17,7 +17,15 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -25,6 +33,8 @@ import { Upload, X, Image as ImageIcon } from "lucide-react";
 
 const detailsSchema = z.object({
   description: z.string().max(1000, { message: "Description must be less than 1000 characters" }),
+  unit: z.enum(["weight", "distance", "time"]),
+  superset_multiplier: z.coerce.number().min(1, "Multiplier must be at least 1").max(5, "Multiplier must be at most 5"),
 });
 
 type DetailsFormValues = z.infer<typeof detailsSchema>;
@@ -33,6 +43,8 @@ interface EditExerciseDetailsDialogProps {
   exerciseId: string;
   currentImageUrl?: string | null;
   currentDescription?: string | null;
+  currentUnit?: string | null;
+  currentSupersetMultiplier?: number | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onDetailsUpdated: () => void;
@@ -42,6 +54,8 @@ export function EditExerciseDetailsDialog({
   exerciseId,
   currentImageUrl,
   currentDescription,
+  currentUnit,
+  currentSupersetMultiplier,
   open,
   onOpenChange,
   onDetailsUpdated,
@@ -55,6 +69,8 @@ export function EditExerciseDetailsDialog({
     resolver: zodResolver(detailsSchema),
     defaultValues: {
       description: currentDescription || "",
+      unit: (currentUnit as "weight" | "distance" | "time") || "weight",
+      superset_multiplier: currentSupersetMultiplier || 1.2,
     },
   });
 
@@ -62,11 +78,13 @@ export function EditExerciseDetailsDialog({
     if (open) {
       form.reset({
         description: currentDescription || "",
+        unit: (currentUnit as "weight" | "distance" | "time") || "weight",
+        superset_multiplier: currentSupersetMultiplier || 1.2,
       });
       setImagePreview(currentImageUrl || null);
       setSelectedFile(null);
     }
-  }, [open, currentImageUrl, currentDescription, form]);
+  }, [open, currentImageUrl, currentDescription, currentUnit, currentSupersetMultiplier, form]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -133,6 +151,8 @@ export function EditExerciseDetailsDialog({
         .update({
           image_url: imageUrl,
           description: data.description || null,
+          unit: data.unit,
+          superset_multiplier: data.superset_multiplier,
         })
         .eq("id", exerciseId);
 
@@ -222,7 +242,51 @@ export function EditExerciseDetailsDialog({
                   <FormControl>
                     <Textarea 
                       placeholder="Describe the exercise, proper form, muscles worked..."
-                      className="min-h-[120px] resize-none"
+                      className="min-h-[100px] resize-none"
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="unit"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Unit of Measurement</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select unit" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="weight">Weight (kg)</SelectItem>
+                      <SelectItem value="distance">Distance (m)</SelectItem>
+                      <SelectItem value="time">Time (s)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="superset_multiplier"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Super Set Multiplier</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="number" 
+                      step="0.1" 
+                      min="1" 
+                      max="5"
+                      placeholder="1.2"
                       {...field} 
                     />
                   </FormControl>

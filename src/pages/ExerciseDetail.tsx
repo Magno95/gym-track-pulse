@@ -135,6 +135,7 @@ export default function ExerciseDetail() {
       <AddSessionDialog
         exerciseId={exercise.id}
         exerciseName={exercise.name}
+        supersetMultiplier={exercise.superset_multiplier}
         onSessionAdded={handleSessionAdded}
       />
 
@@ -152,6 +153,8 @@ export default function ExerciseDetail() {
         exerciseId={exercise.id}
         currentImageUrl={exercise.image_url}
         currentDescription={exercise.description}
+        currentUnit={exercise.unit}
+        currentSupersetMultiplier={exercise.superset_multiplier}
         open={editingDetails}
         onOpenChange={setEditingDetails}
         onDetailsUpdated={loadExercise}
@@ -257,7 +260,7 @@ export default function ExerciseDetail() {
                   {session.superset_id && (
                     <span className="absolute bottom-2 right-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-accent/20 text-accent">
                       <Zap className="h-3 w-3" />
-                      Super Set {session.is_superset_secondary && "(1.2x)"}
+                      Super Set {session.is_superset_secondary && `(${exercise.superset_multiplier || 1.2}x)`}
                     </span>
                   )}
                 </Card>

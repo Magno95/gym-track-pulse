@@ -108,13 +108,14 @@ export const supabaseStore = {
     secondaryExerciseId: string,
     date: string,
     primarySets: Array<{ reps: number; weight: number }>,
-    secondarySets: Array<{ reps: number; weight: number }>
+    secondarySets: Array<{ reps: number; weight: number }>,
+    multiplier: number = 1.2
   ): Promise<{ primary: Session; secondary: Session }> => {
     const supersetId = crypto.randomUUID();
     
     // Calculate values
     const primaryValue = primarySets.reduce((sum, set) => sum + (set.reps * set.weight), 0);
-    const secondaryValue = Math.round(secondarySets.reduce((sum, set) => sum + (set.reps * set.weight), 0) * 1.2);
+    const secondaryValue = Math.round(secondarySets.reduce((sum, set) => sum + (set.reps * set.weight), 0) * multiplier);
     
     // Insert primary session
     const { data: primaryData, error: primaryError } = await supabase
@@ -135,7 +136,7 @@ export const supabaseStore = {
 
     if (primaryError) throw primaryError;
 
-    // Insert secondary session with 1.2x multiplier
+    // Insert secondary session with custom multiplier
     const { data: secondaryData, error: secondaryError } = await supabase
       .from("sessions")
       .insert({

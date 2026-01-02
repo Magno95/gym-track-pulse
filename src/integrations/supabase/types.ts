@@ -22,6 +22,8 @@ export type Database = {
           id: string
           image_url: string | null
           name: string
+          superset_multiplier: number | null
+          unit: string | null
           user_id: string
         }
         Insert: {
@@ -31,6 +33,8 @@ export type Database = {
           id?: string
           image_url?: string | null
           name: string
+          superset_multiplier?: number | null
+          unit?: string | null
           user_id: string
         }
         Update: {
@@ -40,6 +44,8 @@ export type Database = {
           id?: string
           image_url?: string | null
           name?: string
+          superset_multiplier?: number | null
+          unit?: string | null
           user_id?: string
         }
         Relationships: []
