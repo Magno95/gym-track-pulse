@@ -44,9 +44,21 @@ const sessionSchema = z.object({
 
 type SessionFormValues = z.infer<typeof sessionSchema>;
 
+type UnitType = "weight" | "distance" | "time";
+
+const getUnitLabel = (unit: UnitType): string => {
+  switch (unit) {
+    case "weight": return "Weight (kg)";
+    case "distance": return "Distance (m)";
+    case "time": return "Time (s)";
+    default: return "Weight (kg)";
+  }
+};
+
 interface EditSessionDialogProps {
   session: Session;
   exerciseName: string;
+  unit?: string | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSessionUpdated: () => void;
@@ -55,6 +67,7 @@ interface EditSessionDialogProps {
 export function EditSessionDialog({
   session,
   exerciseName,
+  unit = "weight",
   open,
   onOpenChange,
   onSessionUpdated,
@@ -184,7 +197,7 @@ export function EditSessionDialog({
                       name={`sets.${index}.weight`}
                       render={({ field }) => (
                         <FormItem>
-                          {index === 0 && <FormLabel>Weight (kg)</FormLabel>}
+                          {index === 0 && <FormLabel>{getUnitLabel((unit || "weight") as UnitType)}</FormLabel>}
                           <FormControl>
                             <Input type="number" min="0" step="0.5" {...field} />
                           </FormControl>
