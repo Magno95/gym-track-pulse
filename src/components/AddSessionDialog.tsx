@@ -201,56 +201,58 @@ export function AddSessionDialog({
     return (
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <FormLabel>{label}</FormLabel>
+          <FormLabel>{label} ({sets.length})</FormLabel>
           <Button type="button" size="sm" variant="outline" onClick={addFn}>
             <Plus className="h-4 w-4 mr-1" />
             Add Set
           </Button>
         </div>
         
-        {sets.map((_, index) => (
-          <div key={index} className="flex gap-2 items-start">
-            <div className="flex-1 grid grid-cols-2 gap-2">
-              <FormField
-                control={form.control}
-                name={`${fieldPrefix}.${index}.reps`}
-                render={({ field }) => (
-                  <FormItem>
-                    {index === 0 && <FormLabel className="text-xs">Reps</FormLabel>}
-                    <FormControl>
-                      <Input type="number" min="1" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name={`${fieldPrefix}.${index}.weight`}
-                render={({ field }) => (
-                  <FormItem>
-                    {index === 0 && <FormLabel className="text-xs">{displayUnitLabel}</FormLabel>}
-                    <FormControl>
-                      <Input type="number" min="0" step="0.5" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+        <div className="max-h-[30vh] overflow-y-auto space-y-2">
+          {sets.map((_, index) => (
+            <div key={index} className="flex gap-2 items-start">
+              <div className="flex-1 grid grid-cols-2 gap-2">
+                <FormField
+                  control={form.control}
+                  name={`${fieldPrefix}.${index}.reps`}
+                  render={({ field }) => (
+                    <FormItem>
+                      {index === 0 && <FormLabel className="text-xs">Reps</FormLabel>}
+                      <FormControl>
+                        <Input type="number" min="1" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name={`${fieldPrefix}.${index}.weight`}
+                  render={({ field }) => (
+                    <FormItem>
+                      {index === 0 && <FormLabel className="text-xs">{displayUnitLabel}</FormLabel>}
+                      <FormControl>
+                        <Input type="number" min="0" step="0.5" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              {sets.length > 1 && (
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => removeFn(index)}
+                  className={index === 0 ? "mt-6" : ""}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
             </div>
-            {sets.length > 1 && (
-              <Button
-                type="button"
-                size="icon"
-                variant="ghost"
-                onClick={() => removeFn(index)}
-                className={index === 0 ? "mt-6" : ""}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            )}
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     );
   };
