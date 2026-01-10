@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { format } from "date-fns";
 import { useParams, useNavigate } from "react-router-dom";
-import { supabaseStore, ExerciseWithSessions } from "@/lib/supabaseStore";
+import { supabaseStore } from "@/lib/supabaseStore";
+import { useExercise, useInvalidateExercises } from "@/hooks/useExercises";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -30,37 +31,20 @@ type Session = Database["public"]["Tables"]["sessions"]["Row"];
 export default function ExerciseDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [exercise, setExercise] = useState<ExerciseWithSessions | null>(null);
-  const [loading, setLoading] = useState(true);
   const [deletingSession, setDeletingSession] = useState<string | null>(null);
   const [editingSession, setEditingSession] = useState<Session | null>(null);
   const [editingDetails, setEditingDetails] = useState(false);
   const [activeTab, setActiveTab] = useState("details");
 
-  const loadExercise = async () => {
-    if (!id) return;
-    try {
-      setLoading(true);
-      const data = await supabaseStore.getById(id);
-      setExercise(data);
-    } catch (error) {
-      console.error("Error loading exercise:", error);
-      toast.error("Failed to load exercise");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadExercise();
-  }, [id]);
+  const { data: exercise, isLoading: loading } = useExercise(id);
+  const { invalidateOne } = useInvalidateExercises();
 
   const handleSessionAdded = () => {
-    loadExercise();
+    if (id) invalidateOne(id);
   };
 
   const handleSessionUpdated = () => {
-    loadExercise();
+    if (id) invalidateOne(id);
   };
 
   const handleDeleteSession = async (sessionId: string) => {
@@ -68,7 +52,7 @@ export default function ExerciseDetail() {
       setDeletingSession(sessionId);
       await supabaseStore.deleteSession(sessionId);
       toast.success("Session deleted successfully");
-      loadExercise();
+      if (id) invalidateOne(id);
     } catch (error) {
       console.error("Error deleting session:", error);
       toast.error("Failed to delete session");
@@ -160,7 +144,7 @@ export default function ExerciseDetail() {
         currentSupersetMultiplier={exercise.superset_multiplier}
         open={editingDetails}
         onOpenChange={setEditingDetails}
-        onDetailsUpdated={loadExercise}
+        onDetailsUpdated={() => id && invalidateOne(id)}
       />
 
       <div className="container max-w-2xl mx-auto px-4 py-6">
