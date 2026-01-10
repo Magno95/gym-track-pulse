@@ -164,7 +164,7 @@ export function EditSessionDialog({
             
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <FormLabel>Sets</FormLabel>
+                <FormLabel>Sets ({form.watch("sets").length})</FormLabel>
                 <Button
                   type="button"
                   size="sm"
@@ -176,49 +176,51 @@ export function EditSessionDialog({
                 </Button>
               </div>
               
-              {form.watch("sets").map((_, index) => (
-                <div key={index} className="flex gap-2 items-start">
-                  <div className="flex-1 grid grid-cols-2 gap-2">
-                    <FormField
-                      control={form.control}
-                      name={`sets.${index}.reps`}
-                      render={({ field }) => (
-                        <FormItem>
-                          {index === 0 && <FormLabel>Reps</FormLabel>}
-                          <FormControl>
-                            <Input type="number" min="1" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name={`sets.${index}.weight`}
-                      render={({ field }) => (
-                        <FormItem>
-                          {index === 0 && <FormLabel>{getUnitLabel((unit || "weight") as UnitType)}</FormLabel>}
-                          <FormControl>
-                            <Input type="number" min="0" step="0.5" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+              <div className="max-h-[30vh] overflow-y-auto space-y-2">
+                {form.watch("sets").map((_, index) => (
+                  <div key={index} className="flex gap-2 items-start">
+                    <div className="flex-1 grid grid-cols-2 gap-2">
+                      <FormField
+                        control={form.control}
+                        name={`sets.${index}.reps`}
+                        render={({ field }) => (
+                          <FormItem>
+                            {index === 0 && <FormLabel>Reps</FormLabel>}
+                            <FormControl>
+                              <Input type="number" min="1" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name={`sets.${index}.weight`}
+                        render={({ field }) => (
+                          <FormItem>
+                            {index === 0 && <FormLabel>{getUnitLabel((unit || "weight") as UnitType)}</FormLabel>}
+                            <FormControl>
+                              <Input type="number" min="0" step="0.5" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    {form.watch("sets").length > 1 && (
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => removeSet(index)}
+                        className={index === 0 ? "mt-8" : ""}
+                      >
+                        <Plus className="h-4 w-4 rotate-45" />
+                      </Button>
+                    )}
                   </div>
-                  {form.watch("sets").length > 1 && (
-                    <Button
-                      type="button"
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => removeSet(index)}
-                      className={index === 0 ? "mt-8" : ""}
-                    >
-                      <Plus className="h-4 w-4 rotate-45" />
-                    </Button>
-                  )}
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
             
             <div className="flex gap-3 pt-4">
