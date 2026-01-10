@@ -32,6 +32,7 @@ import { toast } from "sonner";
 import { Upload, X, Image as ImageIcon } from "lucide-react";
 
 const detailsSchema = z.object({
+  name: z.string().min(1, { message: "Name is required" }).max(100, { message: "Name must be less than 100 characters" }),
   description: z.string().max(1000, { message: "Description must be less than 1000 characters" }),
   unit: z.enum(["weight", "distance", "time"]),
   superset_multiplier: z.coerce.number().min(1, "Multiplier must be at least 1").max(5, "Multiplier must be at most 5"),
@@ -41,6 +42,7 @@ type DetailsFormValues = z.infer<typeof detailsSchema>;
 
 interface EditExerciseDetailsDialogProps {
   exerciseId: string;
+  currentName: string;
   currentImageUrl?: string | null;
   currentDescription?: string | null;
   currentUnit?: string | null;
@@ -52,6 +54,7 @@ interface EditExerciseDetailsDialogProps {
 
 export function EditExerciseDetailsDialog({
   exerciseId,
+  currentName,
   currentImageUrl,
   currentDescription,
   currentUnit,
@@ -68,6 +71,7 @@ export function EditExerciseDetailsDialog({
   const form = useForm<DetailsFormValues>({
     resolver: zodResolver(detailsSchema),
     defaultValues: {
+      name: currentName || "",
       description: currentDescription || "",
       unit: (currentUnit as "weight" | "distance" | "time") || "weight",
       superset_multiplier: currentSupersetMultiplier || 1.2,
@@ -77,6 +81,7 @@ export function EditExerciseDetailsDialog({
   useEffect(() => {
     if (open) {
       form.reset({
+        name: currentName || "",
         description: currentDescription || "",
         unit: (currentUnit as "weight" | "distance" | "time") || "weight",
         superset_multiplier: currentSupersetMultiplier || 1.2,
@@ -84,7 +89,7 @@ export function EditExerciseDetailsDialog({
       setImagePreview(currentImageUrl || null);
       setSelectedFile(null);
     }
-  }, [open, currentImageUrl, currentDescription, currentUnit, currentSupersetMultiplier, form]);
+  }, [open, currentName, currentImageUrl, currentDescription, currentUnit, currentSupersetMultiplier, form]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -149,6 +154,7 @@ export function EditExerciseDetailsDialog({
       const { error } = await supabase
         .from("exercises")
         .update({
+          name: data.name,
           image_url: imageUrl,
           description: data.description || null,
           unit: data.unit,
@@ -171,15 +177,28 @@ export function EditExerciseDetailsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Exercise Details</DialogTitle>
           <DialogDescription>
-            Add an image and description for this exercise.
+            Update the exercise name, image and description.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Exercise name" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <div className="space-y-2">
               <label className="text-sm font-medium">Image</label>
               <input

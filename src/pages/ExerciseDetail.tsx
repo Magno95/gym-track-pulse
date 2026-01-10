@@ -153,6 +153,7 @@ export default function ExerciseDetail() {
 
       <EditExerciseDetailsDialog
         exerciseId={exercise.id}
+        currentName={exercise.name}
         currentImageUrl={exercise.image_url}
         currentDescription={exercise.description}
         currentUnit={exercise.unit}
