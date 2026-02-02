@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -20,8 +20,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { supabaseStore } from "@/lib/supabaseStore";
-import { toast } from "sonner";
+import { useUpdateSession } from "@/hooks/useSessionMutations";
 import { Database } from "@/integrations/supabase/types";
 
 type Session = Database["public"]["Tables"]["sessions"]["Row"];
@@ -72,7 +71,7 @@ export function EditSessionDialog({
   onOpenChange,
   onSessionUpdated,
 }: EditSessionDialogProps) {
-  const [loading, setLoading] = useState(false);
+  const updateSessionMutation = useUpdateSession(session.exercise_id);
 
   // Parse sets from session
   const getInitialSets = () => {
@@ -118,23 +117,22 @@ export function EditSessionDialog({
     }
   };
 
+  const loading = updateSessionMutation.isPending;
+
   const onSubmit = async (data: SessionFormValues) => {
-    try {
-      setLoading(true);
-      await supabaseStore.updateSession(session.id, {
+    updateSessionMutation.mutate(
+      {
+        sessionId: session.id,
         date: data.date,
         sets: data.sets as Array<{ reps: number; weight: number }>,
-      });
-      const totalValue = data.sets.reduce((sum, set) => sum + (set.reps * set.weight), 0);
-      toast.success(`Session updated (Total: ${totalValue})`);
-      onOpenChange(false);
-      onSessionUpdated();
-    } catch (error) {
-      console.error("Error updating session:", error);
-      toast.error("Failed to update session.");
-    } finally {
-      setLoading(false);
-    }
+      },
+      {
+        onSuccess: () => {
+          onOpenChange(false);
+          onSessionUpdated();
+        },
+      }
+    );
   };
 
   return (

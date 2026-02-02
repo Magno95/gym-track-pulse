@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { useParams, useNavigate } from "react-router-dom";
-import { supabaseStore } from "@/lib/supabaseStore";
 import { useExercise, useInvalidateExercises } from "@/hooks/useExercises";
+import { useDeleteSession } from "@/hooks/useSessionMutations";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -23,7 +23,6 @@ import { EditExerciseDetailsDialog } from "@/components/EditExerciseDetailsDialo
 import { ArrowLeft, Calendar, TrendingUp, Trash2, Edit, Image, Zap } from "lucide-react";
 import { getCategoryConfig } from "@/lib/categoryIcons";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { toast } from "sonner";
 import { Database } from "@/integrations/supabase/types";
 
 type Session = Database["public"]["Tables"]["sessions"]["Row"];
@@ -31,13 +30,13 @@ type Session = Database["public"]["Tables"]["sessions"]["Row"];
 export default function ExerciseDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [deletingSession, setDeletingSession] = useState<string | null>(null);
   const [editingSession, setEditingSession] = useState<Session | null>(null);
   const [editingDetails, setEditingDetails] = useState(false);
   const [activeTab, setActiveTab] = useState("details");
 
   const { data: exercise, isLoading: loading } = useExercise(id);
   const { invalidateOne } = useInvalidateExercises();
+  const deleteSessionMutation = useDeleteSession(id || "");
 
   const handleSessionAdded = () => {
     if (id) invalidateOne(id);
@@ -47,18 +46,8 @@ export default function ExerciseDetail() {
     if (id) invalidateOne(id);
   };
 
-  const handleDeleteSession = async (sessionId: string) => {
-    try {
-      setDeletingSession(sessionId);
-      await supabaseStore.deleteSession(sessionId);
-      toast.success("Session deleted successfully");
-      if (id) invalidateOne(id);
-    } catch (error) {
-      console.error("Error deleting session:", error);
-      toast.error("Failed to delete session");
-    } finally {
-      setDeletingSession(null);
-    }
+  const handleDeleteSession = (sessionId: string) => {
+    deleteSessionMutation.mutate(sessionId);
   };
 
   if (loading) {
@@ -237,9 +226,9 @@ export default function ExerciseDetail() {
                             <AlertDialogCancel>Cancel</AlertDialogCancel>
                             <AlertDialogAction 
                               onClick={() => handleDeleteSession(session.id)}
-                              disabled={deletingSession === session.id}
+                              disabled={deleteSessionMutation.isPending}
                             >
-                              {deletingSession === session.id ? "Deleting..." : "Delete"}
+                              {deleteSessionMutation.isPending ? "Deleting..." : "Delete"}
                             </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
