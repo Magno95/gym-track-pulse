@@ -25,7 +25,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Zap, X } from "lucide-react";
 import { supabaseStore, ExerciseWithSessions } from "@/lib/supabaseStore";
 import { getCategoryIcon } from "@/lib/categoryIcons";
-import { toast } from "sonner";
+import { useAddSession, useAddSupersetSession } from "@/hooks/useSessionMutations";
 
 const setSchema = z.object({
   reps: z.coerce
@@ -75,7 +75,8 @@ export function AddSessionDialog({
   onSessionAdded,
 }: AddSessionDialogProps) {
   const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const addSessionMutation = useAddSession(exerciseId);
+  const addSupersetMutation = useAddSupersetSession();
   const [exercises, setExercises] = useState<ExerciseWithSessions[]>([]);
   const [selectedSecondaryExercise, setSelectedSecondaryExercise] = useState<ExerciseWithSessions | null>(null);
 
@@ -144,31 +145,10 @@ export function AddSessionDialog({
 
   const multiplier = supersetMultiplier || 1.2;
 
+  const loading = addSessionMutation.isPending || addSupersetMutation.isPending;
+
   const onSubmit = async (data: SessionFormValues) => {
-    try {
-      setLoading(true);
-      
-      if (data.isSuperSet && data.secondaryExerciseId && data.secondarySets?.length) {
-        await supabaseStore.addSupersetSession(
-          exerciseId,
-          data.secondaryExerciseId,
-          data.date,
-          data.sets as Array<{ reps: number; weight: number }>,
-          data.secondarySets as Array<{ reps: number; weight: number }>,
-          multiplier
-        );
-        const primaryValue = data.sets.reduce((sum, set) => sum + (set.reps * set.weight), 0);
-        const secondaryValue = Math.round(data.secondarySets.reduce((sum, set) => sum + (set.reps * set.weight), 0) * multiplier);
-        toast.success(`Superset logged! (${primaryValue} + ${secondaryValue} with ${multiplier}x bonus)`);
-      } else {
-        await supabaseStore.addSession(exerciseId, {
-          date: data.date,
-          sets: data.sets as Array<{ reps: number; weight: number }>,
-        });
-        const totalValue = data.sets.reduce((sum, set) => sum + (set.reps * set.weight), 0);
-        toast.success(`${data.sets.length} sets logged (Total: ${totalValue})`);
-      }
-      
+    const resetForm = () => {
       const lastSet = data.sets[data.sets.length - 1];
       form.reset({
         date: new Date().toISOString().split("T")[0],
@@ -180,11 +160,28 @@ export function AddSessionDialog({
       setSelectedSecondaryExercise(null);
       setOpen(false);
       onSessionAdded();
-    } catch (error) {
-      console.error("Error adding session:", error);
-      toast.error("Failed to add session. Please try again.");
-    } finally {
-      setLoading(false);
+    };
+
+    if (data.isSuperSet && data.secondaryExerciseId && data.secondarySets?.length) {
+      addSupersetMutation.mutate(
+        {
+          primaryExerciseId: exerciseId,
+          secondaryExerciseId: data.secondaryExerciseId,
+          date: data.date,
+          primarySets: data.sets as Array<{ reps: number; weight: number }>,
+          secondarySets: data.secondarySets as Array<{ reps: number; weight: number }>,
+          multiplier,
+        },
+        { onSuccess: resetForm }
+      );
+    } else {
+      addSessionMutation.mutate(
+        {
+          date: data.date,
+          sets: data.sets as Array<{ reps: number; weight: number }>,
+        },
+        { onSuccess: resetForm }
+      );
     }
   };
 
