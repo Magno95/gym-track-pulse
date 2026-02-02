@@ -20,7 +20,7 @@ import { Card } from "@/components/ui/card";
 import { AddSessionDialog } from "@/components/AddSessionDialog";
 import { EditSessionDialog } from "@/components/EditSessionDialog";
 import { EditExerciseDetailsDialog } from "@/components/EditExerciseDetailsDialog";
-import { ArrowLeft, Calendar, TrendingUp, Trash2, Edit, Image, Zap } from "lucide-react";
+import { ArrowLeft, Calendar, TrendingUp, Trash2, Edit, Image, Zap, Trophy } from "lucide-react";
 import { getCategoryConfig } from "@/lib/categoryIcons";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { Database } from "@/integrations/supabase/types";
@@ -131,6 +131,7 @@ export default function ExerciseDetail() {
         currentDescription={exercise.description}
         currentUnit={exercise.unit}
         currentSupersetMultiplier={exercise.superset_multiplier}
+        currentPersonalRecords={exercise.personal_records as Array<{ text: string; date: string }> | null}
         open={editingDetails}
         onOpenChange={setEditingDetails}
         onDetailsUpdated={() => id && invalidateOne(id)}
@@ -169,6 +170,39 @@ export default function ExerciseDetail() {
                   <p className="text-muted-foreground italic">No description added yet.</p>
                 )}
               </div>
+
+              {/* Personal Records Section */}
+              {(() => {
+                const prs = exercise.personal_records as Array<{ text: string; date: string }> | null;
+                return (
+                  <div className="w-full mt-6">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Trophy className="h-5 w-5 text-accent" />
+                      <h3 className="text-lg font-semibold text-foreground">🏆 PR</h3>
+                    </div>
+                    {prs && prs.length > 0 ? (
+                      <div className="space-y-2">
+                        {prs.map((pr, index) => (
+                          <div
+                            key={index}
+                            className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border"
+                          >
+                            <div className="flex items-center gap-3">
+                              <span className="text-lg font-bold text-primary">#{index + 1}</span>
+                              <span className="font-medium text-foreground">{pr.text}</span>
+                            </div>
+                            <span className="text-sm text-muted-foreground">
+                              {format(new Date(pr.date), "dd/MM/yyyy")}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground italic">No personal records yet. Add one by editing the exercise!</p>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           </TabsContent>
 

@@ -22,6 +22,7 @@ export type Database = {
           id: string
           image_url: string | null
           name: string
+          personal_records: Json | null
           superset_multiplier: number | null
           unit: string | null
           user_id: string
@@ -33,6 +34,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           name: string
+          personal_records?: Json | null
           superset_multiplier?: number | null
           unit?: string | null
           user_id: string
@@ -44,6 +46,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           name?: string
+          personal_records?: Json | null
           superset_multiplier?: number | null
           unit?: string | null
           user_id?: string
