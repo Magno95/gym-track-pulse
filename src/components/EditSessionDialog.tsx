@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -72,6 +72,7 @@ export function EditSessionDialog({
   onSessionUpdated,
 }: EditSessionDialogProps) {
   const updateSessionMutation = useUpdateSession(session.exercise_id);
+  const setsRef = useRef<HTMLDivElement>(null);
 
   // Parse sets from session
   const getInitialSets = () => {
@@ -108,6 +109,9 @@ export function EditSessionDialog({
     const currentSets = form.getValues("sets");
     const lastSet = currentSets[currentSets.length - 1];
     form.setValue("sets", [...currentSets, { reps: lastSet?.reps ?? 10, weight: lastSet?.weight ?? 0 }]);
+    setTimeout(() => {
+      setsRef.current?.scrollTo({ top: setsRef.current.scrollHeight, behavior: 'smooth' });
+    }, 50);
   };
 
   const removeSet = (index: number) => {
@@ -167,14 +171,18 @@ export function EditSessionDialog({
                   type="button"
                   size="sm"
                   variant="outline"
-                  onClick={addSet}
+                  onClick={(e) => {
+                    (e.target as HTMLButtonElement).blur();
+                    addSet();
+                  }}
+                  className="active:scale-95 transition-transform"
                 >
                   <Plus className="h-4 w-4 mr-1" />
                   Add Set
                 </Button>
               </div>
               
-              <div className="max-h-[30vh] overflow-y-auto space-y-2">
+              <div ref={setsRef} className="max-h-[30vh] overflow-y-auto space-y-2 sets-scrollbar pr-1">
                 {form.watch("sets").map((_, index) => (
                   <div key={index} className="flex gap-2 items-start">
                     <div className={`flex items-center justify-center w-6 h-9 text-xs font-medium text-muted-foreground ${index === 0 ? "mt-8" : ""}`}>
