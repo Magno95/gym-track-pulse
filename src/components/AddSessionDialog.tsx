@@ -208,6 +208,9 @@ export function AddSessionDialog({
         <div className="max-h-[30vh] overflow-y-auto space-y-2">
           {sets.map((_, index) => (
             <div key={index} className="flex gap-2 items-start">
+              <div className={`flex items-center justify-center w-6 h-9 text-xs font-medium text-muted-foreground ${index === 0 ? "mt-6" : ""}`}>
+                {index + 1}
+              </div>
               <div className="flex-1 grid grid-cols-2 gap-2">
                 <FormField
                   control={form.control}
