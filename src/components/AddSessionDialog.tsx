@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -79,6 +79,8 @@ export function AddSessionDialog({
   const addSupersetMutation = useAddSupersetSession();
   const [exercises, setExercises] = useState<ExerciseWithSessions[]>([]);
   const [selectedSecondaryExercise, setSelectedSecondaryExercise] = useState<ExerciseWithSessions | null>(null);
+  const primarySetsRef = useRef<HTMLDivElement>(null);
+  const secondarySetsRef = useRef<HTMLDivElement>(null);
 
   const form = useForm<SessionFormValues>({
     resolver: zodResolver(sessionSchema),
@@ -111,6 +113,9 @@ export function AddSessionDialog({
     const currentSets = form.getValues("sets");
     const lastSet = currentSets[currentSets.length - 1];
     form.setValue("sets", [...currentSets, { reps: lastSet?.reps ?? 10, weight: lastSet?.weight ?? 0 }]);
+    setTimeout(() => {
+      primarySetsRef.current?.scrollTo({ top: primarySetsRef.current.scrollHeight, behavior: 'smooth' });
+    }, 50);
   };
 
   const removeSet = (index: number) => {
@@ -124,6 +129,9 @@ export function AddSessionDialog({
     const currentSets = form.getValues("secondarySets") || [];
     const lastSet = currentSets[currentSets.length - 1];
     form.setValue("secondarySets", [...currentSets, { reps: lastSet?.reps ?? 10, weight: lastSet?.weight ?? 0 }]);
+    setTimeout(() => {
+      secondarySetsRef.current?.scrollTo({ top: secondarySetsRef.current.scrollHeight, behavior: 'smooth' });
+    }, 50);
   };
 
   const removeSecondarySet = (index: number) => {
@@ -192,20 +200,30 @@ export function AddSessionDialog({
     label: string,
     addFn: () => void,
     removeFn: (index: number) => void,
-    displayUnitLabel: string
+    displayUnitLabel: string,
+    scrollRef: React.RefObject<HTMLDivElement>
   ) => {
     const sets = form.watch(fieldPrefix) || [];
     return (
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <FormLabel>{label} ({sets.length})</FormLabel>
-          <Button type="button" size="sm" variant="outline" onClick={addFn}>
+          <Button 
+            type="button" 
+            size="sm" 
+            variant="outline" 
+            onClick={(e) => {
+              (e.target as HTMLButtonElement).blur();
+              addFn();
+            }}
+            className="active:scale-95 transition-transform"
+          >
             <Plus className="h-4 w-4 mr-1" />
             Add Set
           </Button>
         </div>
         
-        <div className="max-h-[30vh] overflow-y-auto space-y-2">
+        <div ref={scrollRef} className="max-h-[30vh] overflow-y-auto space-y-2 sets-scrollbar pr-1">
           {sets.map((_, index) => (
             <div key={index} className="flex gap-2 items-start">
               <div className={`flex items-center justify-center w-6 h-9 text-xs font-medium text-muted-foreground ${index === 0 ? "mt-6" : ""}`}>
@@ -294,7 +312,7 @@ export function AddSessionDialog({
             {/* Primary Exercise Sets */}
             <div className="p-3 rounded-lg bg-muted/50 border border-border">
               <p className="text-sm font-medium text-foreground mb-3">{exerciseName}</p>
-              {renderSetsForm("sets", "Sets", addSet, removeSet, unitLabel)}
+              {renderSetsForm("sets", "Sets", addSet, removeSet, unitLabel, primarySetsRef)}
             </div>
 
             {/* Super Set Toggle */}
@@ -381,7 +399,7 @@ export function AddSessionDialog({
                         <X className="h-4 w-4" />
                       </Button>
                     </div>
-                    {renderSetsForm("secondarySets", "Sets", addSecondarySet, removeSecondarySet, getUnitLabel((selectedSecondaryExercise.unit || "weight") as UnitType))}
+                    {renderSetsForm("secondarySets", "Sets", addSecondarySet, removeSecondarySet, getUnitLabel((selectedSecondaryExercise.unit || "weight") as UnitType), secondarySetsRef)}
                   </div>
                 )}
               </div>
