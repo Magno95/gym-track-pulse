@@ -304,130 +304,133 @@ export function AddSessionDialog({
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="date"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Date</FormLabel>
-                  <FormControl>
-                    <Input type="date" {...field} autoFocus={false} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            {/* Primary Exercise Sets */}
-            <div className="p-3 rounded-lg bg-muted/50 border border-border">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-sm font-medium text-foreground">{exerciseName}</p>
-                <span className="text-sm font-semibold text-primary">{primaryScore.toLocaleString()} pts</span>
-              </div>
-              {renderSetsForm("sets", "Sets", addSet, removeSet, unitLabel, primarySetsRef)}
-            </div>
-
-            {/* Live Total Score */}
-            <div className="flex items-center justify-between p-3 rounded-lg bg-primary/10 border border-primary/20">
-              <span className="text-sm font-medium">Session Score</span>
-              <span className="text-lg font-bold text-primary">{totalScore.toLocaleString()} pts</span>
-            </div>
-
-            {/* Super Set Toggle */}
-            <div className="flex items-center justify-between p-3 rounded-lg bg-accent/10 border border-accent/20">
-              <div className="flex items-center gap-2">
-                <Zap className="h-4 w-4 text-accent" />
-                <span className="text-sm font-medium">Super Set</span>
-                <Badge variant="secondary" className="text-xs">{multiplier}x bonus</Badge>
-              </div>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col h-full">
+            <div className="flex-1 space-y-4 overflow-y-auto sets-scrollbar pr-1">
               <FormField
                 control={form.control}
-                name="isSuperSet"
+                name="date"
                 render={({ field }) => (
                   <FormItem>
+                    <FormLabel>Date</FormLabel>
                     <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={(checked) => {
-                          field.onChange(checked);
-                          if (!checked) {
-                            handleClearSecondaryExercise();
-                          }
-                        }}
-                      />
+                      <Input type="date" {...field} autoFocus={false} />
                     </FormControl>
+                    <FormMessage />
                   </FormItem>
                 )}
               />
-            </div>
-
-            {/* Secondary Exercise Selection */}
-            {isSuperSet && (
-              <div className="space-y-3">
-                {!selectedSecondaryExercise ? (
-                  <div className="space-y-2">
-                    <FormLabel>Select Secondary Exercise</FormLabel>
-                    <div className="max-h-40 overflow-y-auto rounded-lg border border-border bg-popover">
-                      {exercises.map((exercise) => {
-                        const CategoryIcon = getCategoryIcon(exercise.category);
-                        return (
-                          <button
-                            key={exercise.id}
-                            type="button"
-                            onClick={() => handleSelectSecondaryExercise(exercise)}
-                            className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-accent transition-colors"
-                          >
-                            <CategoryIcon className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm">{exercise.name}</span>
-                            <span className="text-xs text-muted-foreground ml-auto capitalize">
-                              {exercise.category}
-                            </span>
-                          </button>
-                        );
-                      })}
-                      {exercises.length === 0 && (
-                        <p className="text-sm text-muted-foreground text-center py-4">
-                          No other exercises available
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="p-3 rounded-lg bg-accent/5 border border-accent/20">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        {(() => {
-                          const CategoryIcon = getCategoryIcon(selectedSecondaryExercise.category);
-                          return <CategoryIcon className="h-4 w-4 text-accent" />;
-                        })()}
-                        <p className="text-sm font-medium text-foreground">
-                          {selectedSecondaryExercise.name}
-                        </p>
-                        <Badge variant="outline" className="text-xs text-accent border-accent">
-                          {multiplier}x
-                        </Badge>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-accent">{secondaryScore.toLocaleString()} pts</span>
-                        <Button
-                          type="button"
-                          size="icon"
-                          variant="ghost"
-                          onClick={handleClearSecondaryExercise}
-                          className="h-6 w-6"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                    {renderSetsForm("secondarySets", "Sets", addSecondarySet, removeSecondarySet, getUnitLabel((selectedSecondaryExercise.unit || "weight") as UnitType), secondarySetsRef)}
-                  </div>
-                )}
+              
+              {/* Primary Exercise Sets */}
+              <div className="p-3 rounded-lg bg-muted/50 border border-border">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-sm font-medium text-foreground">{exerciseName}</p>
+                  <span className="text-sm font-semibold text-primary">{primaryScore.toLocaleString()} pts</span>
+                </div>
+                {renderSetsForm("sets", "Sets", addSet, removeSet, unitLabel, primarySetsRef)}
               </div>
-            )}
+
+              {/* Live Total Score */}
+              <div className="flex items-center justify-between p-3 rounded-lg bg-primary/10 border border-primary/20">
+                <span className="text-sm font-medium">Session Score</span>
+                <span className="text-lg font-bold text-primary">{totalScore.toLocaleString()} pts</span>
+              </div>
+
+              {/* Super Set Toggle */}
+              <div className="flex items-center justify-between p-3 rounded-lg bg-accent/10 border border-accent/20">
+                <div className="flex items-center gap-2">
+                  <Zap className="h-4 w-4 text-accent" />
+                  <span className="text-sm font-medium">Super Set</span>
+                  <Badge variant="secondary" className="text-xs">{multiplier}x bonus</Badge>
+                </div>
+                <FormField
+                  control={form.control}
+                  name="isSuperSet"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={(checked) => {
+                            field.onChange(checked);
+                            if (!checked) {
+                              handleClearSecondaryExercise();
+                            }
+                          }}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {/* Secondary Exercise Selection */}
+              {isSuperSet && (
+                <div className="space-y-3">
+                  {!selectedSecondaryExercise ? (
+                    <div className="space-y-2">
+                      <FormLabel>Select Secondary Exercise</FormLabel>
+                      <div className="max-h-40 overflow-y-auto rounded-lg border border-border bg-popover">
+                        {exercises.map((exercise) => {
+                          const CategoryIcon = getCategoryIcon(exercise.category);
+                          return (
+                            <button
+                              key={exercise.id}
+                              type="button"
+                              onClick={() => handleSelectSecondaryExercise(exercise)}
+                              className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-accent transition-colors"
+                            >
+                              <CategoryIcon className="h-4 w-4 text-muted-foreground" />
+                              <span className="text-sm">{exercise.name}</span>
+                              <span className="text-xs text-muted-foreground ml-auto capitalize">
+                                {exercise.category}
+                              </span>
+                            </button>
+                          );
+                        })}
+                        {exercises.length === 0 && (
+                          <p className="text-sm text-muted-foreground text-center py-4">
+                            No other exercises available
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-3 rounded-lg bg-accent/5 border border-accent/20">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          {(() => {
+                            const CategoryIcon = getCategoryIcon(selectedSecondaryExercise.category);
+                            return <CategoryIcon className="h-4 w-4 text-accent" />;
+                          })()}
+                          <p className="text-sm font-medium text-foreground">
+                            {selectedSecondaryExercise.name}
+                          </p>
+                          <Badge variant="outline" className="text-xs text-accent border-accent">
+                            {multiplier}x
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-semibold text-accent">{secondaryScore.toLocaleString()} pts</span>
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="ghost"
+                            onClick={handleClearSecondaryExercise}
+                            className="h-6 w-6"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                      {renderSetsForm("secondarySets", "Sets", addSecondarySet, removeSecondarySet, getUnitLabel((selectedSecondaryExercise.unit || "weight") as UnitType), secondarySetsRef)}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
             
-            <div className="flex gap-3 pt-4">
+            {/* Fixed bottom buttons */}
+            <div className="flex gap-3 pt-4 pb-16 mt-auto">
               <Button
                 type="button"
                 variant="outline"
