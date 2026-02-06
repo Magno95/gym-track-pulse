@@ -304,8 +304,8 @@ export function AddSessionDialog({
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col h-full">
-            <div className="flex-1 space-y-4 overflow-y-auto sets-scrollbar pr-1">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col h-full relative">
+            <div className="flex-1 space-y-4 overflow-y-auto sets-scrollbar pr-1 pb-24">
               <FormField
                 control={form.control}
                 name="date"
@@ -430,7 +430,7 @@ export function AddSessionDialog({
             </div>
             
             {/* Fixed bottom buttons */}
-            <div className="flex gap-3 pt-4 pb-16 mt-auto">
+            <div className="fixed bottom-16 left-0 right-0 flex gap-3 px-4 pt-4 pb-4 bg-background">
               <Button
                 type="button"
                 variant="outline"
