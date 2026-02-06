@@ -39,9 +39,10 @@ const DialogContent = React.forwardRef<
         e.preventDefault();
         onOpenAutoFocus?.(e);
       }}
+      style={{ "--tw-enter-duration": "800ms", "--tw-exit-duration": "800ms" } as React.CSSProperties}
       className={cn(
         // Bottom sheet style - anchored to bottom, content starts from top
-        "fixed bottom-0 left-0 right-0 z-50 flex flex-col w-full gap-4 border-t bg-background px-4 pt-4 pb-0 shadow-[0_-10px_40px_-10px_rgba(0,0,0,0.3)] duration-[800ms] rounded-t-2xl h-[calc(100vh-40px)] overflow-hidden data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom",
+        "fixed bottom-0 left-0 right-0 z-50 flex flex-col w-full gap-4 border-t bg-background px-4 pt-4 pb-0 shadow-[0_-10px_40px_-10px_rgba(0,0,0,0.3)] rounded-t-2xl h-[calc(100vh-40px)] overflow-hidden data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom",
         className,
       )}
       {...props}
