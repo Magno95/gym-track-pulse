@@ -305,7 +305,7 @@ export function AddSessionDialog({
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col h-full relative">
-            <div className="flex-1 space-y-4 overflow-y-auto sets-scrollbar pr-1 pb-24">
+            <div className="flex-1 space-y-4 overflow-y-auto sets-scrollbar pr-1 pb-32">
               <FormField
                 control={form.control}
                 name="date"
