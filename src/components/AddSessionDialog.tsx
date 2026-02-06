@@ -430,7 +430,7 @@ export function AddSessionDialog({
             </div>
             
             {/* Fixed bottom buttons */}
-            <div className="fixed bottom-16 left-0 right-0 flex gap-3 px-4 pt-4 pb-4 bg-background">
+            <div className="fixed bottom-0 left-0 right-0 flex gap-3 px-4 pt-4 pb-16 bg-background">
               <Button
                 type="button"
                 variant="outline"
