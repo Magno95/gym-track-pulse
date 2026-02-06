@@ -195,6 +195,16 @@ export function AddSessionDialog({
 
   const unitLabel = getUnitLabel((unit || "weight") as UnitType);
 
+  // Calculate live scores
+  const primarySets = form.watch("sets") || [];
+  const secondarySets = form.watch("secondarySets") || [];
+  
+  const primaryScore = primarySets.reduce((sum, set) => sum + (set.reps * set.weight), 0);
+  const secondaryScore = isSuperSet && selectedSecondaryExercise 
+    ? Math.round(secondarySets.reduce((sum, set) => sum + (set.reps * set.weight), 0) * multiplier)
+    : 0;
+  const totalScore = primaryScore + secondaryScore;
+
   const renderSetsForm = (
     fieldPrefix: "sets" | "secondarySets",
     label: string,
@@ -311,8 +321,17 @@ export function AddSessionDialog({
             
             {/* Primary Exercise Sets */}
             <div className="p-3 rounded-lg bg-muted/50 border border-border">
-              <p className="text-sm font-medium text-foreground mb-3">{exerciseName}</p>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm font-medium text-foreground">{exerciseName}</p>
+                <span className="text-sm font-semibold text-primary">{primaryScore.toLocaleString()} pts</span>
+              </div>
               {renderSetsForm("sets", "Sets", addSet, removeSet, unitLabel, primarySetsRef)}
+            </div>
+
+            {/* Live Total Score */}
+            <div className="flex items-center justify-between p-3 rounded-lg bg-primary/10 border border-primary/20">
+              <span className="text-sm font-medium">Session Score</span>
+              <span className="text-lg font-bold text-primary">{totalScore.toLocaleString()} pts</span>
             </div>
 
             {/* Super Set Toggle */}
@@ -389,15 +408,18 @@ export function AddSessionDialog({
                           {multiplier}x
                         </Badge>
                       </div>
-                      <Button
-                        type="button"
-                        size="icon"
-                        variant="ghost"
-                        onClick={handleClearSecondaryExercise}
-                        className="h-6 w-6"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold text-accent">{secondaryScore.toLocaleString()} pts</span>
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="ghost"
+                          onClick={handleClearSecondaryExercise}
+                          className="h-6 w-6"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                     {renderSetsForm("secondarySets", "Sets", addSecondarySet, removeSecondarySet, getUnitLabel((selectedSecondaryExercise.unit || "weight") as UnitType), secondarySetsRef)}
                   </div>
