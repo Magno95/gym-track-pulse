@@ -319,6 +319,12 @@ export function AddSessionDialog({
                   </FormItem>
                 )}
               />
+
+              {/* Live Total Score */}
+              <div className="flex items-center justify-between p-3 rounded-lg bg-primary/10 border border-primary/20">
+                <span className="text-sm font-medium">Session Score</span>
+                <span className="text-lg font-bold text-primary">{totalScore.toLocaleString()} pts</span>
+              </div>
               
               {/* Primary Exercise Sets */}
               <div className="p-3 rounded-lg bg-muted/50 border border-border">
@@ -327,12 +333,6 @@ export function AddSessionDialog({
                   <span className="text-sm font-semibold text-primary">{primaryScore.toLocaleString()} pts</span>
                 </div>
                 {renderSetsForm("sets", "Sets", addSet, removeSet, unitLabel, primarySetsRef)}
-              </div>
-
-              {/* Live Total Score */}
-              <div className="flex items-center justify-between p-3 rounded-lg bg-primary/10 border border-primary/20">
-                <span className="text-sm font-medium">Session Score</span>
-                <span className="text-lg font-bold text-primary">{totalScore.toLocaleString()} pts</span>
               </div>
 
               {/* Super Set Toggle */}
