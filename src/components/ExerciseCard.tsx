@@ -13,10 +13,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import { TrendingUp, Trash2, Image } from "lucide-react";
 import { getCategoryConfig } from "@/lib/categoryIcons";
-import { ExerciseWithSessions, supabaseStore } from "@/lib/supabaseStore";
+import { ExerciseWithSessions } from "@/lib/supabaseStore";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { getCachedExercises, setCachedExercises, addToSyncQueue } from "@/lib/localCache";
+import { EXERCISES_QUERY_KEY } from "@/hooks/useExercises";
 
 interface ExerciseCardProps {
   exercise: ExerciseWithSessions;
@@ -26,6 +29,7 @@ interface ExerciseCardProps {
 export function ExerciseCard({ exercise, onDeleted }: ExerciseCardProps) {
   const navigate = useNavigate();
   const [deleting, setDeleting] = useState(false);
+  const queryClient = useQueryClient();
   const latestSession = exercise.sessions[exercise.sessions.length - 1];
   const previousSession = exercise.sessions[exercise.sessions.length - 2];
   
@@ -36,18 +40,20 @@ export function ExerciseCard({ exercise, onDeleted }: ExerciseCardProps) {
     ? ((latestSession.value - previousSession.value) / previousSession.value * 100).toFixed(1)
     : null;
 
-  const handleDelete = async () => {
-    try {
-      setDeleting(true);
-      await supabaseStore.deleteExercise(exercise.id);
-      toast.success("Exercise deleted successfully");
-      onDeleted();
-    } catch (error) {
-      console.error("Error deleting exercise:", error);
-      toast.error("Failed to delete exercise");
-    } finally {
-      setDeleting(false);
+  const handleDelete = () => {
+    // Update react-query cache
+    queryClient.setQueryData<ExerciseWithSessions[]>(EXERCISES_QUERY_KEY, (old) =>
+      old?.filter(e => e.id !== exercise.id) || []
+    );
+    // Update localStorage cache
+    const cache = getCachedExercises();
+    if (cache) {
+      setCachedExercises(cache.filter(e => e.id !== exercise.id));
     }
+    // Queue for background DB sync
+    addToSyncQueue({ type: 'delete_exercise', payload: { exerciseId: exercise.id } });
+    toast.success("Exercise deleted");
+    onDeleted();
   };
 
   return (

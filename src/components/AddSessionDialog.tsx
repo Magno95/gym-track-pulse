@@ -24,6 +24,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Zap, X } from "lucide-react";
 import { supabaseStore, ExerciseWithSessions } from "@/lib/supabaseStore";
+import { getCachedExercises } from "@/lib/localCache";
 import { getCategoryIcon } from "@/lib/categoryIcons";
 import { useAddSession, useAddSupersetSession } from "@/hooks/useSessionMutations";
 
@@ -96,16 +97,17 @@ export function AddSessionDialog({
   const isSuperSet = form.watch("isSuperSet");
 
   useEffect(() => {
-    const loadExercises = async () => {
-      try {
-        const data = await supabaseStore.getAll();
-        setExercises(data.filter(ex => ex.id !== exerciseId));
-      } catch (error) {
-        console.error("Error loading exercises:", error);
-      }
-    };
     if (open) {
-      loadExercises();
+      // Read from localStorage cache for instant display
+      const cached = getCachedExercises();
+      if (cached) {
+        setExercises(cached.filter(ex => ex.id !== exerciseId));
+      } else {
+        // Fallback to DB if no cache
+        supabaseStore.getAll().then(data => {
+          setExercises(data.filter(ex => ex.id !== exerciseId));
+        }).catch(err => console.error("Error loading exercises:", err));
+      }
     }
   }, [open, exerciseId]);
 

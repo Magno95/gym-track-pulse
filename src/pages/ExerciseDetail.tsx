@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
+import { processQueue } from "@/lib/localCache";
 import { format } from "date-fns";
 import { useParams, useNavigate } from "react-router-dom";
 import { useExercise, useInvalidateExercises } from "@/hooks/useExercises";
@@ -82,7 +83,7 @@ export default function ExerciseDetail() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => navigate("/")}
+              onClick={() => { processQueue(); navigate("/"); }}
               className="hover:bg-secondary"
             >
               <ArrowLeft className="h-5 w-5" />
