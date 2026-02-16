@@ -29,6 +29,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { getCachedExercises, setCachedExercises } from "@/lib/localCache";
 import { Upload, X, Image as ImageIcon, Trophy, Plus, Trash2, Edit2, Check } from "lucide-react";
 import { format } from "date-fns";
 
@@ -222,6 +223,21 @@ export function EditExerciseDetailsDialog({
         .eq("id", exerciseId);
 
       if (error) throw error;
+
+      // Update localStorage cache
+      const cache = getCachedExercises();
+      if (cache) {
+        const ex = cache.find(e => e.id === exerciseId);
+        if (ex) {
+          ex.name = data.name;
+          ex.description = data.description || null;
+          ex.unit = data.unit;
+          ex.superset_multiplier = data.superset_multiplier;
+          ex.image_url = imageUrl;
+          ex.personal_records = personalRecords as any;
+          setCachedExercises(cache);
+        }
+      }
 
       toast.success("Exercise details updated successfully");
       onOpenChange(false);

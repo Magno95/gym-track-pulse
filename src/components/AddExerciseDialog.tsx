@@ -28,8 +28,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { supabaseStore } from "@/lib/supabaseStore";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
+import { ExerciseWithSessions } from "@/lib/supabaseStore";
+import { getCachedExercises, setCachedExercises, addToSyncQueue } from "@/lib/localCache";
+import { EXERCISES_QUERY_KEY } from "@/hooks/useExercises";
 
 const exerciseSchema = z.object({
   name: z
@@ -50,7 +53,7 @@ interface AddExerciseDialogProps {
 
 export function AddExerciseDialog({ onExerciseAdded }: AddExerciseDialogProps) {
   const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const queryClient = useQueryClient();
 
   const form = useForm<ExerciseFormValues>({
     resolver: zodResolver(exerciseSchema),
@@ -60,23 +63,36 @@ export function AddExerciseDialog({ onExerciseAdded }: AddExerciseDialogProps) {
     },
   });
 
-  const onSubmit = async (data: ExerciseFormValues) => {
-    try {
-      setLoading(true);
-      await supabaseStore.addExercise({
-        name: data.name,
-        category: data.category,
-      });
-      toast.success(`${data.name} has been added to ${data.category}.`);
-      form.reset();
-      setOpen(false);
-      onExerciseAdded();
-    } catch (error) {
-      console.error("Error adding exercise:", error);
-      toast.error("Failed to add exercise. Please try again.");
-    } finally {
-      setLoading(false);
-    }
+  const onSubmit = (data: ExerciseFormValues) => {
+    const tempId = `temp-ex-${Date.now()}`;
+    const newExercise: ExerciseWithSessions = {
+      id: tempId,
+      name: data.name,
+      category: data.category,
+      user_id: 'local',
+      created_at: new Date().toISOString(),
+      description: null,
+      image_url: null,
+      personal_records: null,
+      superset_multiplier: 1.2,
+      unit: 'weight',
+      sessions: [],
+    };
+
+    // Update react-query cache
+    queryClient.setQueryData<ExerciseWithSessions[]>(EXERCISES_QUERY_KEY, (old) =>
+      [newExercise, ...(old || [])]
+    );
+    // Update localStorage cache
+    const cache = getCachedExercises();
+    setCachedExercises([newExercise, ...(cache || [])]);
+    // Queue for background DB sync
+    addToSyncQueue({ type: 'add_exercise', payload: { name: data.name, category: data.category, tempId } });
+
+    toast.success(`${data.name} has been added to ${data.category}.`);
+    form.reset();
+    setOpen(false);
+    onExerciseAdded();
   };
 
   return (
@@ -146,8 +162,8 @@ export function AddExerciseDialog({ onExerciseAdded }: AddExerciseDialogProps) {
               >
                 Cancel
               </Button>
-              <Button type="submit" className="flex-1" disabled={loading}>
-                {loading ? "Adding..." : "Add Exercise"}
+              <Button type="submit" className="flex-1">
+                Add Exercise
               </Button>
             </div>
           </form>
