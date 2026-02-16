@@ -163,6 +163,14 @@ export function EditSessionDialog({
                 </FormItem>
               )}
             />
+
+            {/* Live Total Score */}
+            <div className="flex items-center justify-between p-3 rounded-lg bg-primary/10 border border-primary/20">
+              <span className="text-sm font-medium">Session Score</span>
+              <span className="text-lg font-bold text-primary">
+                {Math.round(form.watch("sets").reduce((sum, set) => sum + (set.reps * set.weight), 0)).toLocaleString()} pts
+              </span>
+            </div>
             
             <div className="space-y-3">
               <div className="flex items-center justify-between">
@@ -230,14 +238,6 @@ export function EditSessionDialog({
                   </div>
                 ))}
               </div>
-            </div>
-            
-            {/* Live Total Score */}
-            <div className="flex items-center justify-between p-3 rounded-lg bg-primary/10 border border-primary/20">
-              <span className="text-sm font-medium">Session Score</span>
-              <span className="text-lg font-bold text-primary">
-                {Math.round(form.watch("sets").reduce((sum, set) => sum + (set.reps * set.weight), 0)).toLocaleString()} pts
-              </span>
             </div>
 
             <div className="flex gap-3 pt-4">
