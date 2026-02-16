@@ -139,11 +139,13 @@ export default function ExerciseDetail() {
 
       <div className="container max-w-2xl mx-auto px-4 py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-6">
-            <TabsTrigger value="details">Details</TabsTrigger>
-            <TabsTrigger value="sessions">Sessions</TabsTrigger>
-            <TabsTrigger value="statistics">Statistics</TabsTrigger>
-          </TabsList>
+          <div className="sticky top-[57px] z-10 bg-background/95 backdrop-blur-sm pb-4 -mx-4 px-4">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="details">Details</TabsTrigger>
+              <TabsTrigger value="sessions">Sessions</TabsTrigger>
+              <TabsTrigger value="statistics">Statistics</TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="details">
             <div className="flex flex-col">
