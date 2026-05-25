@@ -36,7 +36,7 @@ const setSchema = z.object({
   weight: z.coerce
     .number()
     .min(0, { message: "Weight cannot be negative" })
-    .max(1000, { message: "Maximum 1000 kg" }),
+    .max(100000, { message: "Maximum 100000" }),
 });
 
 const sessionSchema = z.object({

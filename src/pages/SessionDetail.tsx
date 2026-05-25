@@ -14,6 +14,7 @@ interface SessionExercise {
   exerciseId: string;
   exerciseName: string;
   category: string;
+  unit: string | null;
   value: number;
   series: number;
   reps: number;
@@ -27,6 +28,15 @@ interface SupersetGroup {
   exercises: SessionExercise[];
   totalValue: number;
 }
+
+const getUnitSuffix = (unit?: string | null) => {
+  switch (unit) {
+    case "distance": return "m";
+    case "time": return "s";
+    case "weight":
+    default: return "kg";
+  }
+};
 
 const SessionDetail = () => {
   const { date } = useParams<{ date: string }>();
@@ -57,6 +67,7 @@ const SessionDetail = () => {
               exerciseId: exercise.id,
               exerciseName: exercise.name,
               category: exercise.category,
+              unit: exercise.unit,
               value: session.value,
               series: session.series,
               reps: session.reps,
@@ -166,7 +177,7 @@ const SessionDetail = () => {
             {exercise.value.toLocaleString()}
           </p>
           <p className="text-xs text-muted-foreground">
-            {exercise.series}×{exercise.reps} @ {exercise.weight}kg
+            {exercise.series}×{exercise.reps} @ {exercise.weight}{getUnitSuffix(exercise.unit)}
           </p>
         </div>
       </div>

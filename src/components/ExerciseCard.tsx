@@ -26,6 +26,15 @@ interface ExerciseCardProps {
   onDeleted: () => void;
 }
 
+const getUnitSuffix = (unit?: string | null) => {
+  switch (unit) {
+    case "distance": return "m";
+    case "time": return "s";
+    case "weight":
+    default: return "kg";
+  }
+};
+
 export function ExerciseCard({ exercise, onDeleted }: ExerciseCardProps) {
   const navigate = useNavigate();
   const [deleting, setDeleting] = useState(false);
@@ -91,7 +100,7 @@ export function ExerciseCard({ exercise, onDeleted }: ExerciseCardProps) {
             </h3>
             {latestSession && (
               <div className="text-sm text-muted-foreground space-y-0.5">
-                <p className="text-xs">Last: {latestSession.series}×{latestSession.reps} @ {latestSession.weight}kg</p>
+                <p className="text-xs">Last: {latestSession.series}×{latestSession.reps} @ {latestSession.weight}{getUnitSuffix(exercise.unit)}</p>
                 <p className="text-xs">{new Date(latestSession.date).toLocaleDateString()}</p>
               </div>
             )}
