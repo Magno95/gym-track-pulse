@@ -92,6 +92,18 @@ export function AddSessionDialog({
 
   const isSuperSet = form.watch("isSuperSet");
 
+  const resetFormAfterSave = (data: SessionFormValues) => {
+    const lastSet = data.sets[data.sets.length - 1];
+    form.reset({
+      date: new Date().toISOString().split("T")[0],
+      sets: [{ reps: lastSet.reps, weight: lastSet.weight }],
+      isSuperSet: false,
+      secondaryExerciseId: undefined,
+      secondarySets: [{ reps: 10, weight: 0 }],
+    });
+    setSelectedSecondaryExercise(null);
+  };
+
   useEffect(() => {
     const loadExercises = async () => {
       try {
@@ -109,37 +121,55 @@ export function AddSessionDialog({
   const addSet = () => {
     const currentSets = form.getValues("sets");
     const lastSet = currentSets[currentSets.length - 1];
-    form.setValue("sets", [...currentSets, { reps: lastSet?.reps ?? 10, weight: lastSet?.weight ?? 0 }]);
+    form.setValue("sets", [...currentSets, { reps: lastSet?.reps ?? 10, weight: lastSet?.weight ?? 0 }], {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
   };
 
   const removeSet = (index: number) => {
     const currentSets = form.getValues("sets");
     if (currentSets.length > 1) {
-      form.setValue("sets", currentSets.filter((_, i) => i !== index));
+      form.setValue("sets", currentSets.filter((_, i) => i !== index), {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
     }
   };
 
   const addSecondarySet = () => {
     const currentSets = form.getValues("secondarySets") || [];
     const lastSet = currentSets[currentSets.length - 1];
-    form.setValue("secondarySets", [...currentSets, { reps: lastSet?.reps ?? 10, weight: lastSet?.weight ?? 0 }]);
+    form.setValue("secondarySets", [...currentSets, { reps: lastSet?.reps ?? 10, weight: lastSet?.weight ?? 0 }], {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
   };
 
   const removeSecondarySet = (index: number) => {
     const currentSets = form.getValues("secondarySets") || [];
     if (currentSets.length > 1) {
-      form.setValue("secondarySets", currentSets.filter((_, i) => i !== index));
+      form.setValue("secondarySets", currentSets.filter((_, i) => i !== index), {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
     }
   };
 
   const handleSelectSecondaryExercise = (exercise: ExerciseWithSessions) => {
     setSelectedSecondaryExercise(exercise);
-    form.setValue("secondaryExerciseId", exercise.id);
+    form.setValue("secondaryExerciseId", exercise.id, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
   };
 
   const handleClearSecondaryExercise = () => {
     setSelectedSecondaryExercise(null);
-    form.setValue("secondaryExerciseId", undefined);
+    form.setValue("secondaryExerciseId", undefined, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
   };
 
   const multiplier = supersetMultiplier || 1.2;
@@ -169,15 +199,7 @@ export function AddSessionDialog({
         toast.success(`${data.sets.length} sets logged (Total: ${totalValue})`);
       }
       
-      const lastSet = data.sets[data.sets.length - 1];
-      form.reset({
-        date: new Date().toISOString().split("T")[0],
-        sets: [{ reps: lastSet.reps, weight: lastSet.weight }],
-        isSuperSet: false,
-        secondaryExerciseId: undefined,
-        secondarySets: [{ reps: 10, weight: 0 }],
-      });
-      setSelectedSecondaryExercise(null);
+      resetFormAfterSave(data);
       setOpen(false);
       onSessionAdded();
     } catch (error) {
@@ -189,6 +211,25 @@ export function AddSessionDialog({
   };
 
   const unitLabel = getUnitLabel((unit || "weight") as UnitType);
+
+  const closeDialog = async () => {
+    if (loading) return;
+
+    if (!form.formState.isDirty) {
+      setOpen(false);
+      return;
+    }
+
+    await form.handleSubmit(onSubmit)();
+  };
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (nextOpen) {
+      setOpen(true);
+      return;
+    }
+    void closeDialog();
+  };
 
   const renderSetsForm = (
     fieldPrefix: "sets" | "secondarySets",
@@ -256,7 +297,7 @@ export function AddSessionDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button
           size="lg"
@@ -385,21 +426,14 @@ export function AddSessionDialog({
               </div>
             )}
             
-            <div className="flex gap-3 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setOpen(false)}
-                className="flex-1"
-              >
-                Cancel
-              </Button>
+            <div className="pt-4">
               <Button 
-                type="submit" 
-                className="flex-1" 
+                type="button" 
+                className="w-full" 
+                onClick={closeDialog}
                 disabled={loading || (isSuperSet && !selectedSecondaryExercise)}
               >
-                {loading ? "Logging..." : "Log Session"}
+                {loading ? "Saving..." : "Close"}
               </Button>
             </div>
           </form>

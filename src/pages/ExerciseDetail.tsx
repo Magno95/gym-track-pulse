@@ -145,6 +145,7 @@ export default function ExerciseDetail() {
           session={editingSession}
           exerciseName={exercise.name}
           unit={exercise.unit}
+          supersetMultiplier={exercise.superset_multiplier}
           open={!!editingSession}
           onOpenChange={(open) => !open && setEditingSession(null)}
           onSessionUpdated={handleSessionUpdated}

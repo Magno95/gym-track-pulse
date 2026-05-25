@@ -1,0 +1,247 @@
+@use "variables" as *;
+
+svg {
+  fill: currentColor;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+
+  // Debug outline only in local development
+}
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p {
+  margin: 0;
+}
+
+.hide_desk {
+  @media (min-width: $desk-min) {
+    display: none;
+  }
+}
+.hide_mob {
+  @media (max-width: $mob-max) {
+    display: none;
+  }
+}
+
+// ========== Debug Gui  Custom Positioning ==========
+.lil-gui.root {
+  top: 0% !important;
+  right: 0% !important;
+
+  left: unset !important;
+  // top: unset !important;
+
+  // 4K Display support (2160p and higher)
+  // Sizes are scaled up significantly to be readable when viewing 4K in DevTools on a 1080p monitor
+  @media (min-width: 1080px) and (min-height: 1800px) {
+    width: 600px !important;
+    font-size: 36px !important;
+
+    .title {
+      height: 80px !important;
+      font-size: 36px !important;
+      line-height: 80px !important;
+      padding: 0 20px !important;
+    }
+
+    .children {
+      padding-left: 0px !important;
+    }
+
+    .controller {
+      height: 50px !important;
+      font-size: 28px !important;
+      padding: 0 20px !important;
+
+      .name {
+        line-height: 40px !important;
+        width: 50% !important;
+      }
+
+      .widget {
+        width: 100% !important;
+        height: 100% !important;
+        input,
+        select,
+        button {
+          font-size: 24px !important;
+          height: 40px !important;
+          line-height: 40px !important;
+          border-radius: 8px !important;
+          height: 100% !important;
+        }
+
+        input[type="text"],
+        input[type="number"] {
+          padding: 0 10px !important;
+          width: 50% !important;
+          min-width: 50% !important;
+        }
+
+        input[type="checkbox"] {
+          width: 40px !important;
+          height: 40px !important;
+          min-width: 40px !important;
+        }
+
+        input[type="color"] {
+          height: 60px !important;
+          width: 60px !important;
+          min-width: 60px !important;
+        }
+
+        input[type="range"] {
+        }
+        .slider {
+          min-width: 50px !important;
+        }
+
+        select {
+          padding: 0 20px !important;
+        }
+      }
+
+      .display {
+        height: 100% !important;
+        width: 100% !important;
+      }
+
+      &.color {
+        .display {
+          height: 60px !important;
+          width: 100% !important;
+          min-width: 60px !important;
+          border-radius: 8px !important;
+        }
+      }
+
+      &.number {
+        input[type="number"] {
+          width: 100% !important;
+        }
+      }
+    }
+
+    .folder {
+      > .title {
+        padding-left: 20px !important;
+      }
+    }
+  }
+  @media (min-width: 2160px) {
+    width: 900px !important;
+    font-size: 48px !important;
+
+    .title {
+      height: 100px !important;
+      font-size: 48px !important;
+      line-height: 100px !important;
+      padding: 0 40px !important;
+    }
+
+    .children {
+      padding-left: 40px !important;
+    }
+
+    .controller {
+      height: 100px !important;
+      font-size: 42px !important;
+      padding: 0 40px !important;
+
+      .name {
+        line-height: 100px !important;
+        width: 60% !important;
+      }
+
+      .widget {
+        width: 100% !important;
+
+        input,
+        select,
+        button {
+          font-size: 38px !important;
+          height: 80px !important;
+          line-height: 80px !important;
+          border-radius: 8px !important;
+        }
+
+        input[type="text"],
+        input[type="number"] {
+          padding: 0 20px !important;
+        }
+
+        input[type="checkbox"] {
+          width: 50px !important;
+          height: 50px !important;
+          min-width: 50px !important;
+        }
+
+        input[type="color"] {
+          height: 60px !important;
+          width: 60px !important;
+          min-width: 60px !important;
+        }
+
+        input[type="range"] {
+          height: 80px !important;
+        }
+
+        select {
+          padding: 0 20px !important;
+        }
+      }
+
+      &.color {
+        .display {
+          height: 60px !important;
+          width: 60px !important;
+          min-width: 60px !important;
+          border-radius: 8px !important;
+        }
+      }
+
+      &.number {
+        input[type="number"] {
+          width: 100% !important;
+        }
+      }
+    }
+
+    .folder {
+      > .title {
+        padding-left: 40px !important;
+      }
+    }
+  }
+
+  // Mobile support
+  @media (max-width: 767px) {
+    top: 0 !important;
+    bottom: unset !important;
+    font-size: 12px !important;
+    .title {
+      font-size: 10px !important;
+      height: 20px !important;
+    }
+    .controller {
+      font-size: 10px !important;
+      height: 20px !important;
+      .widget {
+        input {
+          font-size: 10px !important;
+        }
+      }
+    }
+  }
+}
+// ========== Debug Gui  Custom Positioning ==========

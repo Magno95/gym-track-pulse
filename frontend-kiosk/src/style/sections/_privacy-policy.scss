@@ -1,0 +1,102 @@
+main.app {
+  &[data-step="privacy-policy"] {
+    .screen--privacy {
+      visibility: visible;
+      opacity: 1;
+      pointer-events: auto;
+      transition: all 0.8s ease 0.8s;
+      filter: blur(0);
+      .privacy-card {
+        height: 900px;
+        transition: height 0.8s ease 1s;
+        &__content {
+          opacity: 1;
+          transition: opacity 0.4s ease 1.2s;
+        }
+        &__acceptance {
+          transform: translateY(0);
+          transition: all 0.4s ease 1.3s;
+        }
+      }
+    }
+  }
+}
+
+.screen--privacy {
+  align-content: center;
+  opacity: 0;
+  filter: blur(10px);
+  transition: all 0.8s ease 0s;
+
+  .privacy-card {
+    position: relative;
+    width: min(920px, 85vw);
+    height: 0px;
+    transition: height 0.8s ease 0s;
+    margin-top: clamp(90px, 10vh, 180px);
+    border: 1px solid rgb(255 255 255 / 10%);
+    border-radius: 32px;
+    background: linear-gradient(135deg, rgb(108 124 148 / 88%), rgb(57 73 105 / 88%));
+    box-shadow: 0 22px 54px rgb(21 29 43 / 28%);
+    overflow: hidden;
+    &__content {
+      padding: 40px;
+      height: 100%;
+      padding-bottom: 280px;
+      overflow-y: scroll;
+      padding-right: 60px;
+      transition: opacity 0.6s ease 0.2s;
+      opacity: 0;
+      h1,
+      h2 {
+        margin: 0 0 20px;
+        font-size: 32px;
+        font-weight: 800;
+        line-height: 1.1;
+      }
+
+      h2 {
+        margin-top: 54px;
+      }
+
+      p {
+        color: rgb(248 246 245 / 92%);
+        font-size: 24px;
+        font-weight: 400;
+        line-height: 1.28;
+      }
+    }
+
+    &__acceptance {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: -5px;
+      display: grid;
+      justify-items: center;
+      gap: 28px;
+      padding: 32px 42px;
+      border-top: 1px solid rgb(255 255 255 / 12%);
+      border-radius: 40px;
+      background: rgba(49, 77, 129, 0.2);
+
+      box-shadow: 0 -1px 5px 0 rgba(141, 141, 141, 0.25);
+      text-align: center;
+      width: 100%;
+      backdrop-filter: blur(10px);
+      transition: all 0.6s ease 0s;
+      transform: translateY(120%);
+      p {
+        width: min(610px, 78vw);
+        font-size: 24px;
+        line-height: 1.2;
+      }
+
+      .screen__actions {
+        display: flex;
+        justify-content: center;
+        gap: clamp(26px, 3vw, 56px);
+      }
+    }
+  }
+}

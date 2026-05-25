@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -55,10 +55,13 @@ const getUnitLabel = (unit: UnitType): string => {
   }
 };
 
+const getPayloadHash = (payload: SessionFormValues) => JSON.stringify(payload);
+
 interface EditSessionDialogProps {
   session: Session;
   exerciseName: string;
   unit?: string | null;
+  supersetMultiplier?: number | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSessionUpdated: () => void;
@@ -68,26 +71,34 @@ export function EditSessionDialog({
   session,
   exerciseName,
   unit = "weight",
+  supersetMultiplier = 1.2,
   open,
   onOpenChange,
   onSessionUpdated,
 }: EditSessionDialogProps) {
   const [loading, setLoading] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<"saved" | "pending" | "saving" | "invalid" | "error">("saved");
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const latestPayloadRef = useRef<SessionFormValues | null>(null);
+  const lastSavedHashRef = useRef("");
+  const saveInFlightRef = useRef(false);
+  const currentSavePromiseRef = useRef<Promise<boolean> | null>(null);
+  const pendingSaveRef = useRef(false);
+  const hasSavedChangesRef = useRef(false);
 
-  // Parse sets from session
-  const getInitialSets = () => {
+  const getInitialSets = useCallback(() => {
     if (session.sets && Array.isArray(session.sets) && session.sets.length > 0) {
-      return (session.sets as Array<{ reps: number; weight: number }>).map((s) => ({
-        reps: s.reps,
-        weight: s.weight,
+      return (session.sets as Array<{ reps: number; weight: number }>).map((set) => ({
+        reps: set.reps,
+        weight: set.weight,
       }));
     }
-    // Fallback to legacy format
+
     return Array.from({ length: session.series }, () => ({
       reps: session.reps,
       weight: Number(session.weight),
     }));
-  };
+  }, [session.reps, session.series, session.sets, session.weight]);
 
   const form = useForm<SessionFormValues>({
     resolver: zodResolver(sessionSchema),
@@ -97,48 +108,199 @@ export function EditSessionDialog({
     },
   });
 
-  // Reset form when session changes
+  const valueMultiplier = session.is_superset_secondary ? (supersetMultiplier || 1.2) : 1;
+
   useEffect(() => {
-    form.reset({
+    const nextPayload = {
       date: session.date,
       sets: getInitialSets(),
+    };
+    form.reset(nextPayload);
+    latestPayloadRef.current = nextPayload;
+    lastSavedHashRef.current = getPayloadHash(nextPayload);
+    pendingSaveRef.current = false;
+    hasSavedChangesRef.current = false;
+    setSaveStatus("saved");
+  }, [form, getInitialSets, session.date, session.id]);
+
+  const persistLatest = useCallback(async (): Promise<boolean> => {
+    if (saveInFlightRef.current) {
+      pendingSaveRef.current = true;
+      return currentSavePromiseRef.current ?? Promise.resolve(true);
+    }
+
+    const payload = latestPayloadRef.current;
+    if (!payload) return true;
+
+    const payloadHash = getPayloadHash(payload);
+    if (payloadHash === lastSavedHashRef.current) {
+      setSaveStatus("saved");
+      return true;
+    }
+
+    saveInFlightRef.current = true;
+    setSaveStatus("saving");
+
+    const savePromise = (async () => {
+      try {
+        await supabaseStore.updateSession(
+          session.id,
+          {
+            date: payload.date,
+            sets: payload.sets as Array<{ reps: number; weight: number }>,
+          },
+          { valueMultiplier }
+        );
+        lastSavedHashRef.current = payloadHash;
+        hasSavedChangesRef.current = true;
+        setSaveStatus("saved");
+        return true;
+      } catch (error) {
+        console.error("Error autosaving session:", error);
+        setSaveStatus("error");
+        toast.error("Failed to save session changes.");
+        return false;
+      } finally {
+        saveInFlightRef.current = false;
+        currentSavePromiseRef.current = null;
+        if (pendingSaveRef.current) {
+          pendingSaveRef.current = false;
+          void persistLatest();
+        }
+      }
+    })();
+
+    currentSavePromiseRef.current = savePromise;
+    return savePromise;
+  }, [session.id, valueMultiplier]);
+
+  const queueAutosave = useCallback((payload: SessionFormValues) => {
+    const payloadHash = getPayloadHash(payload);
+    latestPayloadRef.current = payload;
+
+    if (payloadHash === lastSavedHashRef.current) {
+      setSaveStatus("saved");
+      return;
+    }
+
+    setSaveStatus("pending");
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+    debounceRef.current = setTimeout(() => {
+      debounceRef.current = null;
+      void persistLatest();
+    }, 700);
+  }, [persistLatest]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const subscription = form.watch(() => {
+      const parsed = sessionSchema.safeParse(form.getValues());
+      if (!parsed.success) {
+        setSaveStatus("invalid");
+        return;
+      }
+      queueAutosave(parsed.data);
     });
-  }, [session.id]);
+
+    return () => {
+      subscription.unsubscribe();
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+        debounceRef.current = null;
+      }
+    };
+  }, [form, open, queueAutosave]);
+
+  const flushAutosave = useCallback(async () => {
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+      debounceRef.current = null;
+    }
+
+    const parsed = sessionSchema.safeParse(form.getValues());
+    if (!parsed.success) {
+      setSaveStatus("invalid");
+      return false;
+    }
+
+    latestPayloadRef.current = parsed.data;
+
+    if (currentSavePromiseRef.current) {
+      const inFlightSaved = await currentSavePromiseRef.current;
+      if (!inFlightSaved) return false;
+    }
+
+    const saved = await persistLatest();
+    if (!saved) return false;
+
+    if (currentSavePromiseRef.current) {
+      return currentSavePromiseRef.current;
+    }
+
+    return true;
+  }, [form, persistLatest]);
+
+  const closeDialog = useCallback(async () => {
+    try {
+      setLoading(true);
+      const saved = await flushAutosave();
+      if (!saved) {
+        setLoading(false);
+        return;
+      }
+
+      setLoading(false);
+      onOpenChange(false);
+      if (hasSavedChangesRef.current) {
+        onSessionUpdated();
+      }
+    } catch (error) {
+      console.error("Error closing session dialog:", error);
+      toast.error("Failed to close session.");
+      setLoading(false);
+    }
+  }, [flushAutosave, onOpenChange, onSessionUpdated]);
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (nextOpen) {
+      onOpenChange(true);
+      return;
+    }
+    void closeDialog();
+  };
 
   const addSet = () => {
     const currentSets = form.getValues("sets");
     const lastSet = currentSets[currentSets.length - 1];
-    form.setValue("sets", [...currentSets, { reps: lastSet?.reps ?? 10, weight: lastSet?.weight ?? 0 }]);
+    form.setValue("sets", [...currentSets, { reps: lastSet?.reps ?? 10, weight: lastSet?.weight ?? 0 }], {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
   };
 
   const removeSet = (index: number) => {
     const currentSets = form.getValues("sets");
     if (currentSets.length > 1) {
-      form.setValue("sets", currentSets.filter((_, i) => i !== index));
+      form.setValue("sets", currentSets.filter((_, i) => i !== index), {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
     }
   };
 
-  const onSubmit = async (data: SessionFormValues) => {
-    try {
-      setLoading(true);
-      await supabaseStore.updateSession(session.id, {
-        date: data.date,
-        sets: data.sets as Array<{ reps: number; weight: number }>,
-      });
-      const totalValue = data.sets.reduce((sum, set) => sum + (set.reps * set.weight), 0);
-      toast.success(`Session updated (Total: ${totalValue})`);
-      onOpenChange(false);
-      onSessionUpdated();
-    } catch (error) {
-      console.error("Error updating session:", error);
-      toast.error("Failed to update session.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const statusLabel = {
+    saved: "Saved",
+    pending: "Saving soon...",
+    saving: "Saving...",
+    invalid: "Fix invalid fields to save",
+    error: "Save failed",
+  }[saveStatus];
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Edit Session</DialogTitle>
@@ -147,7 +309,7 @@ export function EditSessionDialog({
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form className="space-y-4" onSubmit={(event) => event.preventDefault()}>
             <FormField
               control={form.control}
               name="date"
@@ -161,7 +323,7 @@ export function EditSessionDialog({
                 </FormItem>
               )}
             />
-            
+
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <FormLabel>Sets</FormLabel>
@@ -175,7 +337,7 @@ export function EditSessionDialog({
                   Add Set
                 </Button>
               </div>
-              
+
               {form.watch("sets").map((_, index) => (
                 <div key={index} className="flex gap-2 items-start">
                   <div className="flex-1 grid grid-cols-2 gap-2">
@@ -220,18 +382,16 @@ export function EditSessionDialog({
                 </div>
               ))}
             </div>
-            
-            <div className="flex gap-3 pt-4">
+
+            <div className="space-y-2 pt-4">
+              <p className="text-center text-xs text-muted-foreground">{statusLabel}</p>
               <Button
                 type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                className="flex-1"
+                className="w-full"
+                disabled={loading || saveStatus === "invalid"}
+                onClick={closeDialog}
               >
-                Cancel
-              </Button>
-              <Button type="submit" className="flex-1" disabled={loading}>
-                {loading ? "Saving..." : "Save"}
+                {loading || saveStatus === "saving" ? "Saving..." : "Close"}
               </Button>
             </div>
           </form>

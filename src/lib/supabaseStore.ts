@@ -5,10 +5,28 @@ type Exercise = Database["public"]["Tables"]["exercises"]["Row"];
 type Session = Database["public"]["Tables"]["sessions"]["Row"];
 type ExerciseInsert = Database["public"]["Tables"]["exercises"]["Insert"];
 type SessionInsert = Database["public"]["Tables"]["sessions"]["Insert"];
+type SessionSet = { reps: number; weight: number };
 
 export interface ExerciseWithSessions extends Exercise {
   sessions: Session[];
 }
+
+const buildSessionPayload = (
+  session: { date: string; sets: SessionSet[] },
+  valueMultiplier: number = 1
+) => {
+  const rawValue = session.sets.reduce((sum, set) => sum + (set.reps * set.weight), 0);
+  const value = Math.round(rawValue * valueMultiplier);
+
+  return {
+    date: session.date,
+    sets: session.sets,
+    series: session.sets.length,
+    reps: session.sets[0]?.reps || 0,
+    weight: session.sets[0]?.weight || 0,
+    value,
+  };
+};
 
 export const supabaseStore = {
   getAll: async (): Promise<ExerciseWithSessions[]> => {
@@ -75,26 +93,14 @@ export const supabaseStore = {
 
   addSession: async (
     exerciseId: string,
-    session: { date: string; sets: Array<{ reps: number; weight: number }> }
+    session: { date: string; sets: SessionSet[] },
+    options?: { valueMultiplier?: number }
   ): Promise<Session> => {
-    // Calculate total value from all sets
-    const value = session.sets.reduce((sum, set) => sum + (set.reps * set.weight), 0);
-    
-    // For backward compatibility, set series to number of sets, and use first set's values
-    const series = session.sets.length;
-    const reps = session.sets[0]?.reps || 0;
-    const weight = session.sets[0]?.weight || 0;
-    
     const { data, error } = await supabase
       .from("sessions")
       .insert({
-        date: session.date,
+        ...buildSessionPayload(session, options?.valueMultiplier),
         exercise_id: exerciseId,
-        sets: session.sets,
-        series,
-        reps,
-        weight,
-        value,
       })
       .select()
       .single();
@@ -107,27 +113,18 @@ export const supabaseStore = {
     primaryExerciseId: string,
     secondaryExerciseId: string,
     date: string,
-    primarySets: Array<{ reps: number; weight: number }>,
-    secondarySets: Array<{ reps: number; weight: number }>,
+    primarySets: SessionSet[],
+    secondarySets: SessionSet[],
     multiplier: number = 1.2
   ): Promise<{ primary: Session; secondary: Session }> => {
     const supersetId = crypto.randomUUID();
-    
-    // Calculate values
-    const primaryValue = primarySets.reduce((sum, set) => sum + (set.reps * set.weight), 0);
-    const secondaryValue = Math.round(secondarySets.reduce((sum, set) => sum + (set.reps * set.weight), 0) * multiplier);
-    
+
     // Insert primary session
     const { data: primaryData, error: primaryError } = await supabase
       .from("sessions")
       .insert({
-        date,
+        ...buildSessionPayload({ date, sets: primarySets }),
         exercise_id: primaryExerciseId,
-        sets: primarySets,
-        series: primarySets.length,
-        reps: primarySets[0]?.reps || 0,
-        weight: primarySets[0]?.weight || 0,
-        value: primaryValue,
         superset_id: supersetId,
         is_superset_secondary: false,
       })
@@ -140,13 +137,8 @@ export const supabaseStore = {
     const { data: secondaryData, error: secondaryError } = await supabase
       .from("sessions")
       .insert({
-        date,
+        ...buildSessionPayload({ date, sets: secondarySets }, multiplier),
         exercise_id: secondaryExerciseId,
-        sets: secondarySets,
-        series: secondarySets.length,
-        reps: secondarySets[0]?.reps || 0,
-        weight: secondarySets[0]?.weight || 0,
-        value: secondaryValue,
         superset_id: supersetId,
         is_superset_secondary: true,
       })
@@ -178,26 +170,12 @@ export const supabaseStore = {
 
   updateSession: async (
     sessionId: string,
-    session: { date: string; sets: Array<{ reps: number; weight: number }> }
+    session: { date: string; sets: SessionSet[] },
+    options?: { valueMultiplier?: number }
   ): Promise<Session> => {
-    // Calculate total value from all sets
-    const value = session.sets.reduce((sum, set) => sum + (set.reps * set.weight), 0);
-    
-    // For backward compatibility, set series to number of sets, and use first set's values
-    const series = session.sets.length;
-    const reps = session.sets[0]?.reps || 0;
-    const weight = session.sets[0]?.weight || 0;
-    
     const { data, error } = await supabase
       .from("sessions")
-      .update({
-        date: session.date,
-        sets: session.sets,
-        series,
-        reps,
-        weight,
-        value,
-      })
+      .update(buildSessionPayload(session, options?.valueMultiplier))
       .eq("id", sessionId)
       .select()
       .single();

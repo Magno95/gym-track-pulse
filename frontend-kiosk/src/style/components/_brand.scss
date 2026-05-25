@@ -1,0 +1,68 @@
+.brand-header {
+  position: absolute;
+  top: clamp(38px, 4.25vw, 82px);
+  left: 50%;
+  z-index: 3;
+  display: grid;
+  justify-items: center;
+  gap: clamp(18px, 1.6vw, 30px);
+  width: min(420px, 52vw);
+  transform: translateX(-50%);
+  text-align: center;
+  width: 100%;
+  pointer-events: none;
+
+  &__logo {
+    width: 300px;
+    height: auto;
+    display: block;
+    margin-bottom: 24px;
+  }
+
+  p {
+    visibility: hidden;
+    color: rgb(248 246 245 / 94%);
+    font-size: 40px;
+    font-weight: 600;
+    line-height: 1.05;
+    width: 100%;
+    opacity: 0;
+    white-space: nowrap;
+    text-align: center;
+    transition:
+      opacity 0.45s ease,
+      visibility 0.45s ease;
+  }
+}
+
+.brand-footer {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  z-index: 3;
+  transform: translateX(-50%);
+  pointer-events: none;
+
+  &__logo {
+    width: 220px;
+    height: auto;
+    display: block;
+  }
+}
+
+.app {
+  &[data-step="idle"] {
+    .brand-header {
+      p {
+        visibility: visible;
+        opacity: 1;
+      }
+    }
+  }
+
+  &[data-step="camera-capture"] {
+    .brand-footer {
+      bottom: 0;
+    }
+  }
+}

@@ -1,0 +1,105 @@
+main.app {
+  &:not([data-step="instructions"]) {
+    .screen--instructions {
+      .instruction-card,
+      .instruction-actions {
+        visibility: hidden;
+        opacity: 0;
+        filter: blur(18px);
+        transition: all 0.8s ease;
+      }
+    }
+  }
+
+  &[data-step="instructions"] {
+    .screen--instructions {
+      visibility: visible;
+      opacity: 1;
+      pointer-events: auto;
+      transition: all 0.8s ease 0.8s;
+      filter: blur(0);
+    }
+  }
+}
+
+.screen--instructions {
+  align-content: center;
+
+  .instruction-stack {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    padding: 0 108px;
+  }
+
+  .instruction-card {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: calc(100% - 216px);
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    border-radius: 6vw;
+    background: linear-gradient(93deg, rgba(116, 136, 174, 0.5) 5.25%, rgba(28, 44, 80, 0.5) 94.86%);
+    box-shadow: 0 0 200px 0 rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(60px);
+    padding: 0;
+    visibility: hidden;
+    opacity: 0;
+    filter: blur(18px);
+    transform-origin: center center;
+    will-change: transform, opacity, filter;
+    height: 276px;
+
+    &__copy {
+      display: grid;
+      gap: 18px;
+
+      p {
+        font-size: 21px;
+        font-weight: 400;
+        line-height: 1;
+      }
+
+      h2 {
+        width: min(540px, 100%);
+        font-size: 28px;
+        font-weight: 600;
+        line-height: 1.18;
+      }
+    }
+
+    &__lottie {
+      width: 276px;
+      height: 276px;
+      flex: 0 0 276px;
+      position: relative;
+      overflow: hidden;
+
+      svg {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+    }
+  }
+
+  .instruction-actions {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    display: grid;
+    justify-items: center;
+    gap: 28px;
+    visibility: hidden;
+    opacity: 0;
+    will-change: transform, opacity, filter;
+
+    button {
+      width: 400px;
+    }
+  }
+}

@@ -1,0 +1,254 @@
+{
+  "brand": {
+    "tagline": {
+      "en": "Less reflection, more you.",
+      "it": "",
+      "es": "",
+      "fr": ""
+    },
+    "logoAlt": {
+      "en": "Crizal Natural Look",
+      "it": "",
+      "es": "",
+      "fr": ""
+    },
+    "essilorAlt": {
+      "en": "Essilor",
+      "it": "",
+      "es": "",
+      "fr": ""
+    }
+  },
+  "start": {
+    "headline": {
+      "en": "<strong>Win a pair of Ray-Ban Meta AI glasses </strong> <br> with Crizal® Natural Look™ <br> and Transitions® Gen S™",
+      "it": "",
+      "es": "",
+      "fr": ""
+    },
+    "subhead": {
+      "en": "The competition is valid until 11/09/2026",
+      "it": "",
+      "es": "",
+      "fr": ""
+    },
+    "cta": {
+      "en": "START THE EXPERIENCE",
+      "it": "",
+      "es": "",
+      "fr": ""
+    }
+  },
+  "privacy": {
+    "biometricTitle": {
+      "en": "Biometric data consent",
+      "it": "",
+      "es": "",
+      "fr": ""
+    },
+    "biometricBody": {
+      "en": "We need your consent to proceed and process your biometric data and provide you with our eyewear suggestion or virtual try on experiences. Your biometric data will be processed realtime on your device and will never be stored on our systems.",
+      "it": "",
+      "es": "",
+      "fr": ""
+    },
+    "privacyTitle": {
+      "en": "Privacy Policy",
+      "it": "",
+      "es": "",
+      "fr": ""
+    },
+    "privacyBody": {
+      "en": "For more information on Interest-based Advertising and your choices regarding it please refer to paragraph DIGITAL ADVERTISING & ANALYTICS. This Privacy Policy is effective as of April 2022. This Policy describes how Luxottica of America Inc, including all direct and indirect subsidiaries, collect, use, and disclose information through our websites and stores.For more information on Interest-based Advertising and your choices regarding it please refer to paragraph DIGITAL ADVERTISING & ANALYTICS. This Privacy Policy is effective as of April 2022. This Policy describes how Luxottica of America Inc, including all direct and indirect subsidiaries, collect, use, and disclose information through our websites and stores.For more information on Interest-based Advertising and your choices regarding it please refer to paragraph DIGITAL ADVERTISING & ANALYTICS. This Privacy Policy is effective as of April 2022. This Policy describes how Luxottica of America Inc, including all direct and indirect subsidiaries, collect, use, and disclose information through our websites and stores.For more information on Interest-based Advertising and your choices regarding it please refer to paragraph DIGITAL ADVERTISING & ANALYTICS. This Privacy Policy is effective as of April 2022. This Policy describes how Luxottica of America Inc, including all direct and indirect subsidiaries, collect, use, and disclose information through our websites and stores.For more information on Interest-based Advertising and your choices regarding it please refer to paragraph DIGITAL ADVERTISING & ANALYTICS. This Privacy Policy is effective as of April 2022. This Policy describes how Luxottica of America Inc, including all direct and indirect subsidiaries, collect, use, and disclose information through our websites and stores.",
+      "it": "",
+      "es": "",
+      "fr": ""
+    },
+    "acceptance": {
+      "en": "By continuing you accept the above <strong> Privacy Policy</strong> and <strong>Essilor® Terms and conditions</strong>.",
+      "it": "",
+      "es": "",
+      "fr": ""
+    },
+    "decline": {
+      "en": "DECLINE",
+      "it": "",
+      "es": "",
+      "fr": ""
+    },
+    "accept": {
+      "en": "ACCEPT",
+      "it": "",
+      "es": "",
+      "fr": ""
+    }
+  },
+  "instructions": {
+    "step1Label": {
+      "en": "STEP 1",
+      "it": "",
+      "es": "",
+      "fr": ""
+    },
+    "step1Body": {
+      "en": "Pick up the glasses featuring the Crizal Natural LookTM coating and put them on.",
+      "it": "",
+      "es": "",
+      "fr": ""
+    },
+    "step2Label": {
+      "en": "STEP 2",
+      "it": "",
+      "es": "",
+      "fr": ""
+    },
+    "step2Body": {
+      "en": "Press START to take your photo, then adjust until your face is centered.",
+      "it": "",
+      "es": "",
+      "fr": ""
+    },
+    "start": {
+      "en": "START",
+      "it": "",
+      "es": "",
+      "fr": ""
+    },
+    "back": {
+      "en": "BACK",
+      "it": "",
+      "es": "",
+      "fr": ""
+    }
+  },
+  "camera": {
+    "readyTitle": {
+      "en": "Ready?",
+      "it": "",
+      "es": "",
+      "fr": ""
+    },
+    "readyBody": {
+      "en": "Position your face inside the oval.",
+      "it": "",
+      "es": "",
+      "fr": ""
+    },
+    "capture": {
+      "en": "TAKE PHOTO",
+      "it": "",
+      "es": "",
+      "fr": ""
+    },
+    "countdownTitle": {
+      "en": "Perfect, stay still!",
+      "it": "",
+      "es": "",
+      "fr": ""
+    },
+    "reviewTitle": {
+      "en": "Happy with the result?",
+      "it": "",
+      "es": "",
+      "fr": ""
+    },
+    "generate": {
+      "en": "GENERATE PICTURE",
+      "it": "",
+      "es": "",
+      "fr": ""
+    },
+    "retake": {
+      "en": "TAKE ANOTHER PICTURE",
+      "it": "",
+      "es": "",
+      "fr": ""
+    },
+    "qrTitle": {
+      "en": "Scan the QR code",
+      "it": "",
+      "es": "",
+      "fr": ""
+    },
+    "qrBody": {
+      "en": "Unlock your personalized Crizal® Natural Look™ photo  and enter the competition for a chance to win a pair  of Ray-Ban Meta Ai glasses",
+      "it": "",
+      "es": "",
+      "fr": ""
+    },
+    "back": {
+      "en": "RESTART",
+      "it": "",
+      "es": "",
+      "fr": ""
+    },
+    "captureAlt": {
+      "en": "Captured campaign photo preview",
+      "it": "",
+      "es": "",
+      "fr": ""
+    }
+  },
+  "status": {
+    "authFailed": {
+      "en": "Authentication failed",
+      "it": "",
+      "es": "",
+      "fr": ""
+    },
+    "photoReady": {
+      "en": "Photo ready",
+      "it": "",
+      "es": "",
+      "fr": ""
+    },
+    "missingPhoto": {
+      "en": "Photo missing.",
+      "it": "",
+      "es": "",
+      "fr": ""
+    },
+    "invalidPhoto": {
+      "en": "Invalid photo. Use JPG, PNG, or WebP up to 8 MB.",
+      "it": "",
+      "es": "",
+      "fr": ""
+    },
+    "creatingSession": {
+      "en": "",
+      "it": "",
+      "es": "",
+      "fr": ""
+    },
+    "uploadingPhoto": {
+      "en": "Uploading photo...",
+      "it": "",
+      "es": "",
+      "fr": ""
+    },
+    "finalizingUpload": {
+      "en": "Finalizing upload...",
+      "it": "",
+      "es": "",
+      "fr": ""
+    },
+    "qrReady": {
+      "en": "QR ready.",
+      "it": "",
+      "es": "",
+      "fr": ""
+    },
+    "captureCancelled": {
+      "en": "Capture cancelled.",
+      "it": "",
+      "es": "",
+      "fr": ""
+    },
+    "kioskError": {
+      "en": "Internal error. Please restart the experience.",
+      "it": "",
+      "es": "",
+      "fr": ""
+    }
+  }
+}

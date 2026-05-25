@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dumbbell } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
+import gymTrackLogo from "@/assets/gym-track-logo.jpg";
 
 const authSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -99,8 +100,12 @@ const Auth = () => {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-4">
           <div className="flex justify-center">
-            <div className="h-12 w-12 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-              <Dumbbell className="h-7 w-7 text-primary-foreground" />
+            <div className="h-24 w-24 rounded-full  from-primary to-accent flex items-center justify-center">
+               <img 
+              src={gymTrackLogo} 
+              alt="GymTrack Logo" 
+              className="h-36 w-36 rounded-full object-cover"
+            />
             </div>
           </div>
           <div className="text-center">

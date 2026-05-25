@@ -1,0 +1,49 @@
+main.app {
+  &[data-step="idle"] {
+    .screen--start {
+      visibility: visible;
+      opacity: 1;
+      pointer-events: auto;
+      transition: all 0.8s ease 0.8s;
+      filter: blur(0);
+    }
+  }
+}
+
+.screen--start {
+  align-content: stretch;
+  opacity: 0;
+  filter: blur(10px);
+  transition-delay: 0ms;
+  transition: all 0.8s ease;
+  .start-hero {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+
+    &__copy {
+      position: relative;
+      z-index: 2;
+      display: grid;
+      justify-items: center;
+      gap: 32px;
+      width: 100%;
+      margin-top: clamp(80px, 11vh, 190px);
+      text-align: center;
+
+      h1 {
+        font-size: 48px;
+        font-weight: 400;
+        line-height: 1.2;
+      }
+
+      p {
+        margin-bottom: 18px;
+        font-size: 24px;
+        font-weight: 400;
+        line-height: 1.2;
+      }
+    }
+  }
+}
