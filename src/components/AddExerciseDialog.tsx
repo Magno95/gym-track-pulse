@@ -100,10 +100,10 @@ export function AddExerciseDialog({ onExerciseAdded }: AddExerciseDialogProps) {
       <DialogTrigger asChild>
         <Button
           size="lg"
-          className="fixed bottom-6 left-6 h-14 w-14 rounded-full shadow-lg z-50 hover:scale-110 transition-transform"
+          className="fixed bottom-6 left-6 h-[72px] w-[72px] rounded-full shadow-lg z-50 hover:scale-110 transition-transform"
           style={{ boxShadow: "var(--shadow-elevated)" }}
         >
-          <Plus className="h-6 w-6" />
+          <Plus className="h-8 w-8" />
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">

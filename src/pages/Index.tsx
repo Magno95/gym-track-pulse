@@ -82,7 +82,10 @@ const Index = () => {
               alt="GymTrack Logo" 
               className="h-10 w-10 rounded-full object-cover"
             />
-            <h1 className="text-2xl font-bold text-foreground flex-1">GymTrack</h1>
+            <div className="flex flex-1 items-baseline gap-2">
+              <h1 className="text-2xl font-bold text-foreground">GymTrack</h1>
+              <span className="text-xs font-medium text-muted-foreground">v{__APP_VERSION__}</span>
+            </div>
             <Button variant="ghost" size="icon" onClick={handleSignOut}>
               <LogOut className="h-5 w-5" />
             </Button>
