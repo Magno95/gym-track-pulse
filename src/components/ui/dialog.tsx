@@ -39,8 +39,10 @@ const DialogContent = React.forwardRef<
         e.preventDefault();
         onOpenAutoFocus?.(e);
       }}
+      style={{ "--tw-enter-duration": "800ms", "--tw-exit-duration": "800ms" } as React.CSSProperties}
       className={cn(
-        "fixed left-[50%] top-[40%] z-50 grid w-[calc(100%-32px)] max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 rounded-xl data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]",
+        // Bottom sheet style - anchored to bottom, content starts from top
+        "fixed bottom-0 left-0 right-0 z-50 flex flex-col w-full gap-4 border-t bg-background px-4 pt-4 pb-0 shadow-[0_-10px_40px_-10px_rgba(0,0,0,0.3)] rounded-t-2xl h-[calc(100vh-40px)] overflow-hidden data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom",
         className,
       )}
       {...props}

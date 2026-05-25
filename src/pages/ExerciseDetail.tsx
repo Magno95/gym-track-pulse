@@ -1,7 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useCallback } from "react";
+import { processQueue } from "@/lib/localCache";
 import { format } from "date-fns";
 import { useParams, useNavigate } from "react-router-dom";
-import { supabaseStore, ExerciseWithSessions } from "@/lib/supabaseStore";
+import { useExercise, useInvalidateExercises } from "@/hooks/useExercises";
+import { useDeleteSession } from "@/hooks/useSessionMutations";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -19,10 +21,9 @@ import { Card } from "@/components/ui/card";
 import { AddSessionDialog } from "@/components/AddSessionDialog";
 import { EditSessionDialog } from "@/components/EditSessionDialog";
 import { EditExerciseDetailsDialog } from "@/components/EditExerciseDetailsDialog";
-import { ArrowLeft, Calendar, TrendingUp, Trash2, Edit, Image, Zap } from "lucide-react";
+import { ArrowLeft, Calendar, TrendingUp, Trash2, Edit, Image, Zap, Trophy } from "lucide-react";
 import { getCategoryConfig } from "@/lib/categoryIcons";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { toast } from "sonner";
 import { Database } from "@/integrations/supabase/types";
 
 type Session = Database["public"]["Tables"]["sessions"]["Row"];
@@ -30,51 +31,24 @@ type Session = Database["public"]["Tables"]["sessions"]["Row"];
 export default function ExerciseDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [exercise, setExercise] = useState<ExerciseWithSessions | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [deletingSession, setDeletingSession] = useState<string | null>(null);
   const [editingSession, setEditingSession] = useState<Session | null>(null);
   const [editingDetails, setEditingDetails] = useState(false);
   const [activeTab, setActiveTab] = useState("details");
 
-  const loadExercise = async () => {
-    if (!id) return;
-    try {
-      setLoading(true);
-      const data = await supabaseStore.getById(id);
-      setExercise(data);
-    } catch (error) {
-      console.error("Error loading exercise:", error);
-      toast.error("Failed to load exercise");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadExercise();
-  }, [id]);
+  const { data: exercise, isLoading: loading } = useExercise(id);
+  const { invalidateOne } = useInvalidateExercises();
+  const deleteSessionMutation = useDeleteSession(id || "");
 
   const handleSessionAdded = () => {
-    loadExercise();
+    if (id) invalidateOne(id);
   };
 
   const handleSessionUpdated = () => {
-    loadExercise();
+    if (id) invalidateOne(id);
   };
 
-  const handleDeleteSession = async (sessionId: string) => {
-    try {
-      setDeletingSession(sessionId);
-      await supabaseStore.deleteSession(sessionId);
-      toast.success("Session deleted successfully");
-      loadExercise();
-    } catch (error) {
-      console.error("Error deleting session:", error);
-      toast.error("Failed to delete session");
-    } finally {
-      setDeletingSession(null);
-    }
+  const handleDeleteSession = (sessionId: string) => {
+    deleteSessionMutation.mutate(sessionId);
   };
 
   if (loading) {
@@ -109,7 +83,7 @@ export default function ExerciseDetail() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => navigate("/")}
+              onClick={() => { processQueue(); navigate("/"); }}
               className="hover:bg-secondary"
             >
               <ArrowLeft className="h-5 w-5" />
@@ -154,22 +128,26 @@ export default function ExerciseDetail() {
 
       <EditExerciseDetailsDialog
         exerciseId={exercise.id}
+        currentName={exercise.name}
         currentImageUrl={exercise.image_url}
         currentDescription={exercise.description}
         currentUnit={exercise.unit}
         currentSupersetMultiplier={exercise.superset_multiplier}
+        currentPersonalRecords={exercise.personal_records as Array<{ text: string; date: string }> | null}
         open={editingDetails}
         onOpenChange={setEditingDetails}
-        onDetailsUpdated={loadExercise}
+        onDetailsUpdated={() => id && invalidateOne(id)}
       />
 
       <div className="container max-w-2xl mx-auto px-4 py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-6">
-            <TabsTrigger value="details">Details</TabsTrigger>
-            <TabsTrigger value="sessions">Sessions</TabsTrigger>
-            <TabsTrigger value="statistics">Statistics</TabsTrigger>
-          </TabsList>
+          <div className="sticky top-[57px] z-10 bg-background/95 backdrop-blur-sm pb-4 -mx-4 px-4">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="details">Details</TabsTrigger>
+              <TabsTrigger value="sessions">Sessions</TabsTrigger>
+              <TabsTrigger value="statistics">Statistics</TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="details">
             <div className="flex flex-col">
@@ -196,6 +174,39 @@ export default function ExerciseDetail() {
                   <p className="text-muted-foreground italic">No description added yet.</p>
                 )}
               </div>
+
+              {/* Personal Records Section */}
+              {(() => {
+                const prs = exercise.personal_records as Array<{ text: string; date: string }> | null;
+                return (
+                  <div className="w-full mt-6">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Trophy className="h-5 w-5 text-accent" />
+                      <h3 className="text-lg font-semibold text-foreground">🏆 PR</h3>
+                    </div>
+                    {prs && prs.length > 0 ? (
+                      <div className="space-y-2">
+                        {prs.map((pr, index) => (
+                          <div
+                            key={index}
+                            className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border"
+                          >
+                            <div className="flex items-center gap-3">
+                              <span className="text-lg font-bold text-primary">#{index + 1}</span>
+                              <span className="font-medium text-foreground">{pr.text}</span>
+                            </div>
+                            <span className="text-sm text-muted-foreground">
+                              {format(new Date(pr.date), "dd/MM/yyyy")}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground italic">No personal records yet. Add one by editing the exercise!</p>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           </TabsContent>
 
@@ -253,9 +264,9 @@ export default function ExerciseDetail() {
                             <AlertDialogCancel>Cancel</AlertDialogCancel>
                             <AlertDialogAction 
                               onClick={() => handleDeleteSession(session.id)}
-                              disabled={deletingSession === session.id}
+                              disabled={deleteSessionMutation.isPending}
                             >
-                              {deletingSession === session.id ? "Deleting..." : "Delete"}
+                              {deleteSessionMutation.isPending ? "Deleting..." : "Delete"}
                             </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>

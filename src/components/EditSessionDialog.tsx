@@ -20,8 +20,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { supabaseStore } from "@/lib/supabaseStore";
-import { toast } from "sonner";
+import { useUpdateSession } from "@/hooks/useSessionMutations";
 import { Database } from "@/integrations/supabase/types";
 
 type Session = Database["public"]["Tables"]["sessions"]["Row"];
@@ -76,7 +75,8 @@ export function EditSessionDialog({
   onOpenChange,
   onSessionUpdated,
 }: EditSessionDialogProps) {
-  const [loading, setLoading] = useState(false);
+  const { mutateAsync: updateSession, isPending } = useUpdateSession(session.exercise_id);
+  const [closeLoading, setCloseLoading] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"saved" | "pending" | "saving" | "invalid" | "error">("saved");
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latestPayloadRef = useRef<SessionFormValues | null>(null);
@@ -85,6 +85,7 @@ export function EditSessionDialog({
   const currentSavePromiseRef = useRef<Promise<boolean> | null>(null);
   const pendingSaveRef = useRef(false);
   const hasSavedChangesRef = useRef(false);
+  const setsRef = useRef<HTMLDivElement>(null);
 
   const getInitialSets = useCallback(() => {
     if (session.sets && Array.isArray(session.sets) && session.sets.length > 0) {
@@ -109,6 +110,9 @@ export function EditSessionDialog({
   });
 
   const valueMultiplier = session.is_superset_secondary ? (supersetMultiplier || 1.2) : 1;
+  const watchedSets = form.watch("sets") || [];
+  const score = Math.round(watchedSets.reduce((sum, set) => sum + (set.reps * set.weight), 0) * valueMultiplier);
+  const loading = closeLoading || isPending;
 
   useEffect(() => {
     const nextPayload = {
@@ -143,14 +147,13 @@ export function EditSessionDialog({
 
     const savePromise = (async () => {
       try {
-        await supabaseStore.updateSession(
-          session.id,
-          {
-            date: payload.date,
-            sets: payload.sets as Array<{ reps: number; weight: number }>,
-          },
-          { valueMultiplier }
-        );
+        await updateSession({
+          sessionId: session.id,
+          date: payload.date,
+          sets: payload.sets as Array<{ reps: number; weight: number }>,
+          valueMultiplier,
+          suppressToast: true,
+        });
         lastSavedHashRef.current = payloadHash;
         hasSavedChangesRef.current = true;
         setSaveStatus("saved");
@@ -158,7 +161,6 @@ export function EditSessionDialog({
       } catch (error) {
         console.error("Error autosaving session:", error);
         setSaveStatus("error");
-        toast.error("Failed to save session changes.");
         return false;
       } finally {
         saveInFlightRef.current = false;
@@ -172,7 +174,7 @@ export function EditSessionDialog({
 
     currentSavePromiseRef.current = savePromise;
     return savePromise;
-  }, [session.id, valueMultiplier]);
+  }, [session.id, updateSession, valueMultiplier]);
 
   const queueAutosave = useCallback((payload: SessionFormValues) => {
     const payloadHash = getPayloadHash(payload);
@@ -245,22 +247,21 @@ export function EditSessionDialog({
 
   const closeDialog = useCallback(async () => {
     try {
-      setLoading(true);
+      setCloseLoading(true);
       const saved = await flushAutosave();
       if (!saved) {
-        setLoading(false);
+        setCloseLoading(false);
         return;
       }
 
-      setLoading(false);
+      setCloseLoading(false);
       onOpenChange(false);
       if (hasSavedChangesRef.current) {
         onSessionUpdated();
       }
     } catch (error) {
       console.error("Error closing session dialog:", error);
-      toast.error("Failed to close session.");
-      setLoading(false);
+      setCloseLoading(false);
     }
   }, [flushAutosave, onOpenChange, onSessionUpdated]);
 
@@ -279,6 +280,9 @@ export function EditSessionDialog({
       shouldDirty: true,
       shouldValidate: true,
     });
+    setTimeout(() => {
+      setsRef.current?.scrollTo({ top: setsRef.current.scrollHeight, behavior: "smooth" });
+    }, 50);
   };
 
   const removeSet = (index: number) => {
@@ -324,63 +328,77 @@ export function EditSessionDialog({
               )}
             />
 
+            <div className="flex items-center justify-between p-3 rounded-lg bg-primary/10 border border-primary/20">
+              <span className="text-sm font-medium">Session Score</span>
+              <span className="text-lg font-bold text-primary">{score.toLocaleString()} pts</span>
+            </div>
+
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <FormLabel>Sets</FormLabel>
+                <FormLabel>Sets ({watchedSets.length})</FormLabel>
                 <Button
                   type="button"
                   size="sm"
                   variant="outline"
-                  onClick={addSet}
+                  onClick={(event) => {
+                    event.currentTarget.blur();
+                    addSet();
+                  }}
+                  className="active:scale-95 transition-transform"
                 >
                   <Plus className="h-4 w-4 mr-1" />
                   Add Set
                 </Button>
               </div>
 
-              {form.watch("sets").map((_, index) => (
-                <div key={index} className="flex gap-2 items-start">
-                  <div className="flex-1 grid grid-cols-2 gap-2">
-                    <FormField
-                      control={form.control}
-                      name={`sets.${index}.reps`}
-                      render={({ field }) => (
-                        <FormItem>
-                          {index === 0 && <FormLabel>Reps</FormLabel>}
-                          <FormControl>
-                            <Input type="number" min="1" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name={`sets.${index}.weight`}
-                      render={({ field }) => (
-                        <FormItem>
-                          {index === 0 && <FormLabel>{getUnitLabel((unit || "weight") as UnitType)}</FormLabel>}
-                          <FormControl>
-                            <Input type="number" min="0" step="0.5" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+              <div ref={setsRef} className="max-h-[30vh] overflow-y-auto space-y-2 sets-scrollbar pr-1">
+                {watchedSets.map((_, index) => (
+                  <div key={index} className="flex gap-2 items-start">
+                    <div className={`flex items-center justify-center w-6 h-9 text-xs font-medium text-muted-foreground ${index === 0 ? "mt-8" : ""}`}>
+                      {index + 1}
+                    </div>
+                    <div className="flex-1 grid grid-cols-2 gap-2">
+                      <FormField
+                        control={form.control}
+                        name={`sets.${index}.reps`}
+                        render={({ field }) => (
+                          <FormItem>
+                            {index === 0 && <FormLabel>Reps</FormLabel>}
+                            <FormControl>
+                              <Input type="number" min="1" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name={`sets.${index}.weight`}
+                        render={({ field }) => (
+                          <FormItem>
+                            {index === 0 && <FormLabel>{getUnitLabel((unit || "weight") as UnitType)}</FormLabel>}
+                            <FormControl>
+                              <Input type="number" min="0" step="0.5" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    {watchedSets.length > 1 && (
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => removeSet(index)}
+                        className={index === 0 ? "mt-8" : ""}
+                      >
+                        <Plus className="h-4 w-4 rotate-45" />
+                      </Button>
+                    )}
                   </div>
-                  {form.watch("sets").length > 1 && (
-                    <Button
-                      type="button"
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => removeSet(index)}
-                      className={index === 0 ? "mt-8" : ""}
-                    >
-                      <Plus className="h-4 w-4 rotate-45" />
-                    </Button>
-                  )}
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
 
             <div className="space-y-2 pt-4">

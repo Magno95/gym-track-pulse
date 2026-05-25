@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo } from "react";
-import { supabaseStore, ExerciseWithSessions } from "@/lib/supabaseStore";
+import { useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useExercises, useInvalidateExercises } from "@/hooks/useExercises";
 import { CategorySection } from "@/components/CategorySection";
 import { AddExerciseDialog } from "@/components/AddExerciseDialog";
 import { SessionCard, DaySession } from "@/components/SessionCard";
@@ -15,33 +15,17 @@ import { toast } from "sonner";
 
 const Index = () => {
   const navigate = useNavigate();
-  const [exercises, setExercises] = useState<ExerciseWithSessions[]>([]);
-  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"exercises" | "sessions">("exercises");
-
-  const loadExercises = async () => {
-    try {
-      setLoading(true);
-      const data = await supabaseStore.getAll();
-      setExercises(data);
-    } catch (error) {
-      console.error("Error loading exercises:", error);
-      toast.error("Failed to load exercises");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadExercises();
-  }, []);
+  
+  const { data: exercises = [], isLoading: loading, isFetching } = useExercises();
+  const { invalidateAll } = useInvalidateExercises();
 
   const handleExerciseAdded = () => {
-    loadExercises();
+    invalidateAll();
   };
 
   const handleExerciseDeleted = () => {
-    loadExercises();
+    invalidateAll();
   };
 
   const handleSignOut = async () => {
