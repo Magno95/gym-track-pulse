@@ -223,23 +223,10 @@ export function AddSessionDialog({
     }
   };
 
-  const closeDialog = async () => {
-    if (loading) return;
-
-    if (!form.formState.isDirty) {
-      setOpen(false);
-      return;
-    }
-
-    await form.handleSubmit(onSubmit)();
-  };
-
   const handleOpenChange = (nextOpen: boolean) => {
-    if (nextOpen) {
-      setOpen(true);
-      return;
+    if (!loading) {
+      setOpen(nextOpen);
     }
-    void closeDialog();
   };
 
   const renderSetsForm = (
@@ -464,12 +451,11 @@ export function AddSessionDialog({
 
             <div className="fixed bottom-0 left-0 right-0 px-4 pt-4 pb-16 bg-background">
               <Button
-                type="button"
+                type="submit"
                 className="w-full"
-                onClick={closeDialog}
                 disabled={loading || (isSuperSet && !selectedSecondaryExercise)}
               >
-                {loading ? "Saving..." : "Close"}
+                {loading ? "Logging..." : "Log Session"}
               </Button>
             </div>
           </form>
