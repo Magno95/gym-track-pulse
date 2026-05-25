@@ -111,6 +111,7 @@ export function EditSessionDialog({
 
   const valueMultiplier = session.is_superset_secondary ? (supersetMultiplier || 1.2) : 1;
   const watchedSets = form.watch("sets") || [];
+  const totalReps = watchedSets.reduce((sum, set) => sum + (Number(set.reps) || 0), 0);
   const score = Math.round(watchedSets.reduce((sum, set) => sum + (set.reps * set.weight), 0) * valueMultiplier);
   const loading = closeLoading || isPending;
 
@@ -335,7 +336,10 @@ export function EditSessionDialog({
 
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <FormLabel>Sets ({watchedSets.length})</FormLabel>
+                <div>
+                  <FormLabel>Sets ({watchedSets.length})</FormLabel>
+                  <p className="text-xs text-muted-foreground">{totalReps.toLocaleString()} total reps</p>
+                </div>
                 <Button
                   type="button"
                   size="sm"

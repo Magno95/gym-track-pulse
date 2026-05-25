@@ -19,6 +19,7 @@ interface SessionExercise {
   series: number;
   reps: number;
   weight: number;
+  totalReps: number;
   supersetId: string | null;
   isSupersetSecondary: boolean;
 }
@@ -62,6 +63,13 @@ const SessionDetail = () => {
           );
           
           sessionsForDate.forEach((session) => {
+            const sets = Array.isArray(session.sets)
+              ? (session.sets as Array<{ reps?: number }>)
+              : [];
+            const totalReps = sets.length > 0
+              ? sets.reduce((sum, set) => sum + (Number(set.reps) || 0), 0)
+              : session.series * session.reps;
+
             sessionExercises.push({
               sessionId: session.id,
               exerciseId: exercise.id,
@@ -72,6 +80,7 @@ const SessionDetail = () => {
               series: session.series,
               reps: session.reps,
               weight: session.weight,
+              totalReps,
               supersetId: session.superset_id,
               isSupersetSecondary: session.is_superset_secondary ?? false,
             });
@@ -145,6 +154,8 @@ const SessionDetail = () => {
   }
 
   const formattedDate = format(new Date(date), "EEEE, MMMM d, yyyy", { locale: enUS });
+  const totalSets = exercises.reduce((sum, exercise) => sum + exercise.series, 0);
+  const totalReps = exercises.reduce((sum, exercise) => sum + exercise.totalReps, 0);
 
   const renderExerciseCard = (exercise: SessionExercise, showSupersetBadge = false) => {
     const CategoryIcon = getCategoryIcon(exercise.category);
@@ -199,6 +210,9 @@ const SessionDetail = () => {
               </h1>
               <p className="text-sm text-muted-foreground">
                 {exercises.length} exercises • {totalValue.toLocaleString()} total points
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {totalSets.toLocaleString()} sets • {totalReps.toLocaleString()} reps
               </p>
             </div>
           </div>

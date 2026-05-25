@@ -238,10 +238,14 @@ export function AddSessionDialog({
     scrollRef: React.RefObject<HTMLDivElement>
   ) => {
     const sets = form.watch(fieldPrefix) || [];
+    const totalReps = sets.reduce((sum, set) => sum + (Number(set.reps) || 0), 0);
     return (
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <FormLabel>{label} ({sets.length})</FormLabel>
+          <div>
+            <FormLabel>{label} ({sets.length})</FormLabel>
+            <p className="text-xs text-muted-foreground">{totalReps.toLocaleString()} total reps</p>
+          </div>
           <Button
             type="button"
             size="sm"
