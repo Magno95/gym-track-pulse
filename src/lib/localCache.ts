@@ -95,32 +95,6 @@ export function addToSyncQueue(op: Omit<SyncOperation, 'id' | 'timestamp' | 'ret
 
   if (op.type === 'update_session') {
     const sessionId = op.payload.sessionId;
-    const queuedAdd = queue.find((queuedOp) =>
-      queuedOp.type === 'add_session' && queuedOp.payload.tempId === sessionId
-    );
-    if (queuedAdd) {
-      queuedAdd.payload.date = op.payload.date;
-      queuedAdd.payload.sets = op.payload.sets;
-      saveSyncQueue(queue);
-      return;
-    }
-
-    const queuedSupersetAdd = queue.find((queuedOp) =>
-      queuedOp.type === 'add_superset_session' &&
-      (queuedOp.payload.primaryTempId === sessionId || queuedOp.payload.secondaryTempId === sessionId)
-    );
-    if (queuedSupersetAdd) {
-      if (queuedSupersetAdd.payload.primaryTempId === sessionId) {
-        queuedSupersetAdd.payload.date = op.payload.date;
-        queuedSupersetAdd.payload.primarySets = op.payload.sets;
-      } else {
-        queuedSupersetAdd.payload.date = op.payload.date;
-        queuedSupersetAdd.payload.secondarySets = op.payload.sets;
-      }
-      saveSyncQueue(queue);
-      return;
-    }
-
     const queuedUpdate = queue.find((queuedOp) =>
       queuedOp.type === 'update_session' && queuedOp.payload.sessionId === sessionId
     );
@@ -177,8 +151,9 @@ export function applyPendingOperations(dbData: ExerciseWithSessions[]): Exercise
         break;
       }
       case 'update_session': {
+        const sessionId = op.payload.sessionId ? resolveId(op.payload.sessionId) : undefined;
         for (const ex of result) {
-          const idx = ex.sessions.findIndex(s => s.id === op.payload.sessionId);
+          const idx = ex.sessions.findIndex(s => s.id === sessionId || s.id === op.payload.sessionId);
           if (idx >= 0) {
             const sets = op.payload.sets as Array<{ reps: number; weight: number }>;
             const rawValue = sets.reduce((sum, set) => sum + (set.reps * set.weight), 0);
@@ -198,8 +173,9 @@ export function applyPendingOperations(dbData: ExerciseWithSessions[]): Exercise
         break;
       }
       case 'delete_session': {
+        const sessionId = op.payload.sessionId ? resolveId(op.payload.sessionId) : undefined;
         for (const ex of result) {
-          ex.sessions = ex.sessions.filter(s => s.id !== op.payload.sessionId);
+          ex.sessions = ex.sessions.filter(s => s.id !== sessionId && s.id !== op.payload.sessionId);
         }
         break;
       }
@@ -285,6 +261,7 @@ export async function processQueue(): Promise<void> {
   for (const op of queue) {
     try {
       const p = { ...op.payload };
+      let shouldRemoveOperation = true;
 
       // Resolve temp IDs to real DB IDs
       if (p.exerciseId) p.exerciseId = resolveId(p.exerciseId);
@@ -303,7 +280,7 @@ export async function processQueue(): Promise<void> {
         }
         case 'update_session': {
           if (p.sessionId.startsWith('temp-')) {
-            // Session not yet synced, skip update - it'll be created with correct data
+            shouldRemoveOperation = false;
             break;
           }
           await supabaseStore.updateSession(p.sessionId, {
@@ -348,9 +325,13 @@ export async function processQueue(): Promise<void> {
       }
 
       // Remove successfully processed operation
-      const currentQueue = getSyncQueue();
-      saveSyncQueue(currentQueue.filter(q => q.id !== op.id));
-      console.log(`[Sync] ✓ ${op.type}`);
+      if (shouldRemoveOperation) {
+        const currentQueue = getSyncQueue();
+        saveSyncQueue(currentQueue.filter(q => q.id !== op.id || q.timestamp !== op.timestamp));
+        console.log(`[Sync] ✓ ${op.type}`);
+      } else {
+        console.log(`[Sync] → ${op.type} waiting for ID mapping`);
+      }
     } catch (error) {
       console.error(`[Sync] ✗ ${op.type}:`, error);
       const currentQueue = getSyncQueue();

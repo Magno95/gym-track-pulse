@@ -43,10 +43,6 @@ export default function ExerciseDetail() {
     if (id) invalidateOne(id);
   };
 
-  const handleSessionUpdated = () => {
-    if (id) invalidateOne(id);
-  };
-
   const handleDeleteSession = (sessionId: string) => {
     deleteSessionMutation.mutate(sessionId);
   };
@@ -122,7 +118,6 @@ export default function ExerciseDetail() {
           supersetMultiplier={exercise.superset_multiplier}
           open={!!editingSession}
           onOpenChange={(open) => !open && setEditingSession(null)}
-          onSessionUpdated={handleSessionUpdated}
         />
       )}
 

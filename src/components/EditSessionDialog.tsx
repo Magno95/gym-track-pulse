@@ -63,7 +63,6 @@ interface EditSessionDialogProps {
   supersetMultiplier?: number | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSessionUpdated: () => void;
 }
 
 export function EditSessionDialog({
@@ -73,7 +72,6 @@ export function EditSessionDialog({
   supersetMultiplier = 1.2,
   open,
   onOpenChange,
-  onSessionUpdated,
 }: EditSessionDialogProps) {
   const { mutateAsync: updateSession, isPending } = useUpdateSession(session.exercise_id);
   const [closeLoading, setCloseLoading] = useState(false);
@@ -84,7 +82,6 @@ export function EditSessionDialog({
   const saveInFlightRef = useRef(false);
   const currentSavePromiseRef = useRef<Promise<boolean> | null>(null);
   const pendingSaveRef = useRef(false);
-  const hasSavedChangesRef = useRef(false);
   const setsRef = useRef<HTMLDivElement>(null);
 
   const getInitialSets = useCallback(() => {
@@ -124,7 +121,6 @@ export function EditSessionDialog({
     latestPayloadRef.current = nextPayload;
     lastSavedHashRef.current = getPayloadHash(nextPayload);
     pendingSaveRef.current = false;
-    hasSavedChangesRef.current = false;
     setSaveStatus("saved");
   }, [form, getInitialSets, session.date, session.id]);
 
@@ -156,7 +152,6 @@ export function EditSessionDialog({
           suppressToast: true,
         });
         lastSavedHashRef.current = payloadHash;
-        hasSavedChangesRef.current = true;
         setSaveStatus("saved");
         return true;
       } catch (error) {
@@ -257,14 +252,11 @@ export function EditSessionDialog({
 
       setCloseLoading(false);
       onOpenChange(false);
-      if (hasSavedChangesRef.current) {
-        onSessionUpdated();
-      }
     } catch (error) {
       console.error("Error closing session dialog:", error);
       setCloseLoading(false);
     }
-  }, [flushAutosave, onOpenChange, onSessionUpdated]);
+  }, [flushAutosave, onOpenChange]);
 
   const handleOpenChange = (nextOpen: boolean) => {
     if (nextOpen) {
