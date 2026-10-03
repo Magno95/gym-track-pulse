@@ -1,6 +1,6 @@
 # Correzioni GymTrack — 3 ottobre 2026
 
-Le correzioni dei 14 problemi dell'[analisi iniziale](analisi-prestazioni-sicurezza-2026-10-02.md) sono implementate nel workspace. Frontend, sincronizzazione, query e controlli automatici sono verificati localmente. Le migrazioni backend sono verificate su PostgreSQL tramite PGlite; la loro esecuzione e la verifica nel database ospitato sono ancora da confermare.
+Le correzioni dei 14 problemi dell'[analisi iniziale](analisi-prestazioni-sicurezza-2026-10-02.md) sono implementate. Frontend, sincronizzazione, query e controlli automatici sono verificati localmente. Entrambe le migrazioni backend sono state applicate e registrate in Lovable Cloud il 3 ottobre 2026; tutti i 13 controlli sul database ospitato sono passati.
 
 Il perimetro comprende l'app React/Vite e il backend Supabase/Lovable Cloud. Le funzionalità locali già presenti di profilo, peso corporeo e navigazione flottante sono mantenute. La rimozione di `frontend-kiosk`, avvenuta esternamente a questi interventi, resta esclusa dalla consegna.
 
@@ -21,7 +21,7 @@ Il perimetro comprende l'app React/Vite e il backend Supabase/Lovable Cloud. Le 
 | 11. Immagini pesanti e orfani | Logo da 192 px; WebP fino a 1.280 px, miniature 192 px, lazy loading; pulizia durevole prima delle scritture con controllo dei riferimenti e attesa di dieci minuti | Pulizia forzata rispetta l'attesa e non blocca le sessioni; policy/bucket verificati in SQL |
 | 12. Validazione solo client | Vincoli SQL, validazione JSON/date/carichi/ripetizioni e snapshot; trigger autorevole per serie, carico e punteggio; moltiplicatore salvato per sessione | Input falsificati respinti, punteggi ricalcolati, snapshot conservati e vecchi client compatibili |
 | 13. Advisory e lockfile divergenti | Unico lockfile npm; aggiornamento dipendenze, incluso React Router 7, Vite 8, Recharts 3 ed ESLint 10; dev server su loopback | Installazione e audit; typecheck e lint dopo adeguamento delle API |
-| 14. Controlli deboli | TypeScript strict; build con typecheck; lint senza warning; CI Node 24 con installazione, test, build e audit | 32 test, lint e build superati |
+| 14. Controlli deboli | TypeScript strict; build con typecheck; lint senza warning; CI Node 24 con installazione, test, build e audit | 36 test, lint e build superati |
 
 Le operazioni che hanno ricevuto un errore di autenticazione restano associate all'account originale. Le operazioni di pulizia immagini sono indipendenti dalle scritture degli allenamenti. Le letture complete vengono persistite separatamente dall'overview; un riepilogo di due sessioni non viene presentato come storico completo. La proiezione delle modifiche conserva il moltiplicatore e l'identità del superset anche se la sessione viene spostata in una giornata che il server non contiene ancora.
 
@@ -45,18 +45,20 @@ I totali includono ricorsivamente le dipendenze statiche condivise della pagina 
 
 - `npm ci`: installazione dal lockfile verificata.
 - `npm run lint`: 0 errori, 0 warning.
-- `npm test`: 32 test superati, 0 falliti.
+- `npm test`: 36 test superati, 0 falliti.
 - `npm run build`: typecheck strict e produzione superati, senza avvisi sulle dimensioni dei chunk.
 - `npm audit --audit-level=moderate`: 0 vulnerabilità segnalate nel lockfile aggiornato.
 - `npm run bundle:stats`: misure riportate sopra.
 
 Il test SQL esegue tutti i file di migrazione e riproduce anche i privilegi predefiniti che possono concedere `EXECUTE` direttamente a `anon`. La seconda migrazione revoca quel permesso esplicito sulla RPC, oltre al permesso di `PUBLIC`. Il checksum dei campi preesistenti delle sessioni, inclusi valori e JSON dei set, rimane identico prima e dopo la prima migrazione. Il test comprende record storici irregolari e inserimenti da client che omettono il nuovo moltiplicatore.
 
-PGlite esegue PostgreSQL con schemi Auth e Storage minimali di test. Le richieste HTTP sono controllate dal test harness e IndexedDB usa `fake-indexeddb`. Questi controlli verificano le regressioni riprodotte, ma non sostituiscono una prova completa del servizio Storage, dei flussi OAuth o della UI nel browser con il database ospitato. Il controllo automatico del browser non era disponibile per completare quella prova.
+PGlite esegue PostgreSQL con schemi Auth e Storage minimali di test. Le richieste HTTP sono controllate dal test harness e IndexedDB usa `fake-indexeddb`. Dopo l'applicazione delle migrazioni in Cloud sono stati verificati anche il caricamento reale di esercizi, storico e grafici nell'anteprima Lovable e i permessi dell'API. Questi controlli non sostituiscono una prova completa del servizio Storage o dei flussi OAuth.
 
 ## Applicazione in Lovable Cloud
 
-L'utente ha scelto di eseguire il file SQL nel progetto Lovable. Il controllo dell'editor tramite l'interfaccia non riusciva ad aggiornare il contenuto eseguibile e manteneva `Run` disabilitato; nessuna di queste migrazioni è stata eseguita da questa sessione. Prima di pubblicare il frontend, completare in **Cloud → SQL editor**:
+Il primo deploy del frontend ha preceduto l'applicazione delle migrazioni: il caricamento falliva con `PGRST202` sulla RPC `get_exercise_overview` e `42703` sulla colonna `sessions.value_multiplier`. Una verifica diretta in Cloud ha confermato che entrambi mancavano e che i dati erano presenti. Le due migrazioni sono state quindi applicate, verificate e registrate tramite l'editor SQL; i conteggi sono rimasti invariati: 39 esercizi e 189 sessioni. Le sole tre policy Storage di scrittura presenti sono quelle del proprietario, e la RPC rifiuta l'accesso anonimo con `42501`.
+
+Per un nuovo ambiente, completare in **Cloud → SQL editor** prima di pubblicare il frontend:
 
 1. [20261003000000_security_sync_performance.sql](../supabase/migrations/20261003000000_security_sync_performance.sql).
 2. [20261003001000_overview_rpc_permissions.sql](../supabase/migrations/20261003001000_overview_rpc_permissions.sql).
@@ -67,6 +69,12 @@ Il primo file usa `BEGIN`/`COMMIT`. I nuovi vincoli `NOT VALID` preservano gli e
 
 Per le vecchie sessioni secondarie il moltiplicatore viene inferito dal rapporto tra punteggio e volume, quando disponibile: gli arrotondamenti storici possono renderlo una stima. Le nuove sessioni salvano direttamente il moltiplicatore utilizzato.
 
+### Plank e peso corporeo negli esercizi a tempo
+
+Il selettore del peso corporeo e il vincolo SQL iniziale ammettevano soltanto l'unità `weight`, impedendo di configurare Plank con l'unità `time`. Il supporto ora comprende peso e tempo. Le nuove serie a tempo conservano i secondi in `duration_seconds` e nella quantità `reps`, il carico effettivo in kg e lo snapshot del peso corporeo; il punteggio è secondi × (peso corporeo + carico aggiunto). Form, modifica e riepiloghi distinguono secondi e kg senza trasformare gli allenamenti precedenti.
+
+La migrazione [20261003002000_timed_bodyweight.sql](../supabase/migrations/20261003002000_timed_bodyweight.sql) è stata applicata e registrata in Cloud. Tutti i sei controlli di [verify_timed_bodyweight.sql](../supabase/verify_timed_bodyweight.sql) sono passati; i conteggi restano 39 esercizi e 189 sessioni. I test coprono anche serie oltre 100 secondi, snapshot dopo correzioni del profilo o cambi di data, validazione dei secondi e sincronizzazione offline. Lint e build strict sono passati.
+
 ## Recupero delle modifiche precedenti
 
 Le nuove operazioni hanno sempre `userId`, UUID persistiti e una versione della modifica. Il banner mostra il salvataggio locale, conserva gli errori e permette un export JSON delle sole operazioni del relativo account. La conferma del server elimina dalla coda soltanto la versione effettivamente inviata.
@@ -76,6 +84,8 @@ Le tre vecchie chiavi globali `gym-tracker-cache`, `gym-tracker-sync-queue` e `g
 La migrazione conserva lo storico. L'eventuale revisione di duplicati, superset parziali e immagini orfane già creati da vecchie versioni richiede dati reali e verifica dei riferimenti; il test non dimostra che tali anomalie siano presenti nel progetto ospitato. Le pulizie durevoli introdotte qui coprono i nuovi upload, le sostituzioni, le rimozioni e le cancellazioni di esercizi.
 
 ## Prevenzione delle regressioni
+
+Prima di ogni rilascio che cambia il contratto delle query, applicare e verificare le migrazioni nel database usato dall'hosting: il push del repository e il deploy del frontend non aggiornano da soli Lovable Cloud. La build e i test locali non certificano la versione del database remoto.
 
 Per nuove scritture usare la coda per account o una conferma del server prima del successo UI. Passare alla coda il proprietario catturato dal form, senza ricavarlo dal solo account attivo al momento dell'invio. Conservare gli UUID prima del primo invio, mantenere i controlli proprietario nelle query e usare la RLS come autorità. Evitare di usare overview come dati iniziali di query che promettono storici completi. Gli aggiornamenti delle dipendenze devono passare lint, test, typecheck/build e audit nella [CI](../.github/workflows/ci.yml).
 

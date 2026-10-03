@@ -19,6 +19,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useState } from "react";
 import { addToSyncQueue } from "@/lib/localCache";
+import { isBodyweightSession, isTimedBodyweightSession } from "@/lib/bodyweight";
 
 interface ExerciseCardProps {
   exercise: ExerciseWithSessions;
@@ -91,10 +92,10 @@ export function ExerciseCard({ exercise, onDeleted }: ExerciseCardProps) {
             <h3 className="font-semibold text-base text-foreground mb-1">
               {exercise.name}
             </h3>
-            {exercise.is_bodyweight && <p className="mb-1 text-xs font-medium text-primary">Bodyweight + added load</p>}
+            {exercise.is_bodyweight && <p className="mb-1 text-xs font-medium text-primary">{exercise.unit === "time" ? "Timed bodyweight + added load" : "Bodyweight + added load"}</p>}
             {latestSession && (
               <div className="text-sm text-muted-foreground space-y-0.5">
-                <p className="text-xs">Last: {latestSession.series}×{latestSession.reps} @ {latestSession.weight}{getUnitSuffix(exercise.unit)}</p>
+                <p className="text-xs">Last: {latestSession.series}×{latestSession.reps}{isTimedBodyweightSession(latestSession) ? "s" : ""} @ {latestSession.weight}{isBodyweightSession(latestSession) ? "kg" : getUnitSuffix(exercise.unit)}</p>
                 <p className="text-xs">{new Date(latestSession.date).toLocaleDateString()}</p>
               </div>
             )}

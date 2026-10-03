@@ -1,6 +1,6 @@
 import { isCalendarDate } from "@/lib/validation";
 import { ExerciseNavigation } from "@/components/ExerciseNavigation";
-import { getSessionSets, isBodyweightSession } from "@/lib/bodyweight";
+import { getSessionSets, isBodyweightSession, isTimedBodyweightSession } from "@/lib/bodyweight";
 import { useState, useCallback, lazy, Suspense } from "react";
 import { processQueue } from "@/lib/localCache";
 import { format } from "date-fns";
@@ -215,9 +215,9 @@ export default function ExerciseDetail() {
                       <div className="space-y-1 text-sm text-muted-foreground">
                         {isBodyweightSession(session) && <p className="text-primary">Body weight: {getSessionSets(session)[0].body_weight} kg · Added load per set</p>}
                         <p>Series: {session.series}</p>
-                        <p>Reps: {session.reps}</p>
+                        <p>{isTimedBodyweightSession(session) ? "Time" : "Reps"}: {session.reps}{isTimedBodyweightSession(session) ? " s" : ""}</p>
                         <p>
-                          {exercise.unit === "distance" ? "Distance" : exercise.unit === "time" ? "Time" : "Weight"}: {session.weight} {exercise.unit === "distance" ? "m" : exercise.unit === "time" ? "s" : "kg"}
+                          {isBodyweightSession(session) ? "Weight" : exercise.unit === "distance" ? "Distance" : exercise.unit === "time" ? "Time" : "Weight"}: {session.weight} {isBodyweightSession(session) ? "kg" : exercise.unit === "distance" ? "m" : exercise.unit === "time" ? "s" : "kg"}
                         </p>
                       </div>
                     </div>

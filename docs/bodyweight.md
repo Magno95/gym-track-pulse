@@ -22,6 +22,14 @@ Migration `20261002223000` was applied there and registered in
   effective weight preserves existing volume calculations and superset bonuses.
 - The exercise's `is_bodyweight` setting is a default for new recordings.
   Existing sessions retain their mode, including when edited after a conversion.
+- Timed exercises such as Plank can also use bodyweight mode after applying
+  `20261003002000_timed_bodyweight.sql`. Each new timed set records whole seconds
+  (1–10,000) and added load in kg. Its score is seconds × (profile weight + added
+  load). A 60-second hold at 80 kg with no added load scores 4,800.
+- Timed sets carry `duration_seconds`, equal to the stored `reps` quantity;
+  `weight` stays in kg. This snapshot keeps edit fields and display units correct
+  even if the exercise's settings change later. Existing manual time sessions
+  retain their original seconds and score. Distance exercises remain manual.
 - Changes to profile history do not recalculate saved workouts. Changing only reps
   or added load preserves a session's snapshot. Changing the workout date resolves
   the weight valid on the new date.
@@ -32,3 +40,11 @@ Migration `20261002223000` was applied there and registered in
 
 Run `npm test` for date resolution, snapshots, legacy session edits and offline
 sync regression tests.
+
+Before publishing the timed-bodyweight frontend, apply the new migration and run
+`supabase/verify_timed_bodyweight.sql`: all six checks must be true. Register
+version `20261003002000` with `supabase/register_timed_bodyweight.sql` after manual
+execution; the Supabase CLI handles registration automatically.
+
+Migration `20261003002000` was applied, verified with all six checks passing and
+registered in this Lovable Cloud project on 2026-10-03. Do not apply it again there.

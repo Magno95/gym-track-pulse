@@ -58,6 +58,20 @@ test("changing a bodyweight session date resolves the new historical weight", ()
   assert.deepEqual(sets.map((set) => set.weight), [78, 88]);
 });
 
+test("timed bodyweight sets score seconds times kilograms and retain the duration snapshot", () => {
+  const sets = materializeSets([{ reps: 60, weight: 0 }, { reps: 45, weight: 5 }], true, 80, "time");
+  assert.deepEqual(sets, [
+    { reps: 60, weight: 80, body_weight: 80, additional_weight: 0, duration_seconds: 60 },
+    { reps: 45, weight: 85, body_weight: 80, additional_weight: 5, duration_seconds: 45 },
+  ]);
+  assert.equal(sets.reduce((sum, set) => sum + set.reps * set.weight, 0), 8625);
+  const saved = { date: "2026-10-10", series: 2, reps: 60, weight: 80, sets };
+  assert.deepEqual(getEditableSets(saved), [{ reps: 60, weight: 0 }, { reps: 45, weight: 5 }]);
+  assert.equal(bodyWeightForEdit(saved, saved.date, [{ effective_date: "2026-10-01", weight_kg: 75 }]), 80);
+  const changedDate = materializeSets(getEditableSets(saved), true, bodyWeightForEdit(saved, "2026-10-15", history), "time");
+  assert.deepEqual(changedDate.map((set) => [set.duration_seconds, set.weight]), [[60, 78], [45, 83]]);
+});
+
 test("defaults to the local calendar date near UTC midnight", () => {
   const original = process.env.TZ;
   process.env.TZ = "Pacific/Kiritimati";
@@ -67,6 +81,39 @@ test("defaults to the local calendar date near UTC midnight", () => {
 });
 
 const { cacheHarness, plain } = await import("./harness.mjs");
+
+test("timed snapshots remain distinguishable from legacy time sessions and validate their duration", async () => {
+  const harness = await cacheHarness();
+  const { isTimedBodyweightSession } = harness.load("lib/bodyweight");
+  const { validateSession } = harness.load("lib/validation");
+  const sets = materializeSets([{ reps: 120, weight: 0 }], true, 80, "time");
+  assert.equal(isTimedBodyweightSession({ sets }), true);
+  assert.equal(isTimedBodyweightSession({ sets: [{ reps: 1, weight: 60 }] }), false);
+  validateSession({ date: "2026-10-03", sets });
+  assert.throws(() => validateSession({ date: "2026-10-03", sets: [{ ...sets[0], duration_seconds: 121 }] }));
+  assert.throws(() => validateSession({ date: "2026-10-03", sets: [{ reps: 60, weight: 80, duration_seconds: 60 }] }));
+});
+
+test("session forms accept timed holds above 100 seconds while retaining repetition limits", async () => {
+  const harness = await cacheHarness();
+  const { createSessionSetSchema } = harness.load("lib/sessionForm");
+  assert.equal(createSessionSetSchema(true).safeParse({ reps: 120, weight: 0 }).success, true);
+  assert.equal(createSessionSetSchema(true).safeParse({ reps: 0, weight: 0 }).success, false);
+  assert.equal(createSessionSetSchema(true).safeParse({ reps: 60.5, weight: 0 }).success, false);
+  assert.equal(createSessionSetSchema(true).safeParse({ reps: 10001, weight: 0 }).success, false);
+  assert.equal(createSessionSetSchema(false).safeParse({ reps: 120, weight: 0 }).success, false);
+});
+
+test("timed bodyweight duration and load survive offline replay and synchronization", async () => {
+  const { cache, calls } = await cacheHarness();
+  const sets = materializeSets([{ reps: 120, weight: 0 }], true, 80, "time");
+  await cache.addToSyncQueue({ type: "add_session", payload: { exerciseId: "plank", tempId: "timed-session", date: "2026-10-03", sets } });
+  const replayed = cache.applyPendingOperations([{ id: "plank", sessions: [] }])[0].sessions[0];
+  assert.deepEqual(plain(replayed.sets), sets);
+  assert.equal(replayed.value, 9600);
+  await cache.processQueue();
+  assert.deepEqual(plain(calls[0][1].sets), sets);
+});
 
 test("offline replay and later server sync retain bodyweight and added-load metadata", async () => {
   const { cache, calls } = await cacheHarness();

@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useDaySession } from "@/hooks/useExercises";
 import { QueryError } from "@/components/QueryError";
 import { isCalendarDate } from "@/lib/validation";
+import { getSessionSets, isBodyweightSession, isTimedBodyweightSession } from "@/lib/bodyweight";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -21,6 +22,7 @@ interface SessionExercise {
   reps: number;
   weight: number;
   totalReps: number;
+  durationSeconds: number | null;
   supersetId: string | null;
   isSupersetSecondary: boolean;
   valueMultiplier: number;
@@ -47,12 +49,14 @@ const SessionDetail = () => {
   const { data, isLoading: loading, isError, refetch, hasCompleteHistory } = useDaySession(date && isCalendarDate(date) ? date : undefined);
   const exercises = useMemo<SessionExercise[]>(() => data.flatMap((exercise) =>
     exercise.sessions.filter((session) => session.date === date).map((session) => {
-      const sets = Array.isArray(session.sets) ? session.sets as Array<{ reps?: number }> : [];
+      const sets = getSessionSets(session);
+      const timed = isTimedBodyweightSession(session);
       return {
         sessionId: session.id, exerciseId: exercise.id, exerciseName: exercise.name,
-        category: exercise.category, unit: exercise.unit, value: session.value,
+        category: exercise.category, unit: isBodyweightSession(session) ? "weight" : exercise.unit, value: session.value,
         series: session.series, reps: session.reps, weight: session.weight,
-        totalReps: sets.length ? sets.reduce((sum, set) => sum + (Number(set.reps) || 0), 0) : session.series * session.reps,
+        totalReps: timed ? 0 : sets.reduce((sum, set) => sum + (Number(set.reps) || 0), 0),
+        durationSeconds: timed ? sets.reduce((sum, set) => sum + (Number(set.duration_seconds) || 0), 0) : null,
         supersetId: session.superset_id, isSupersetSecondary: session.is_superset_secondary ?? false,
         valueMultiplier: session.value_multiplier ?? 1,
       };
@@ -148,7 +152,7 @@ const SessionDetail = () => {
             {exercise.value.toLocaleString()}
           </p>
           <p className="text-xs text-muted-foreground">
-            {exercise.series}×{exercise.reps} @ {exercise.weight}{getUnitSuffix(exercise.unit)}
+            {exercise.durationSeconds !== null ? `${exercise.series} sets · ${exercise.durationSeconds}s` : `${exercise.series}×${exercise.reps}`} @ {exercise.weight}{getUnitSuffix(exercise.unit)}
           </p>
         </div>
       </div>

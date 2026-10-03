@@ -1,7 +1,8 @@
 import { useProfile } from "@/hooks/useProfile";
-import { bodyWeightForEdit, getEditableSets, isBodyweightSession, materializeSets } from "@/lib/bodyweight";
+import { bodyWeightForEdit, getEditableSets, isBodyweightSession, isTimedBodyweightSession, materializeSets } from "@/lib/bodyweight";
 import { BodyweightSummary } from "@/components/BodyweightSummary";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createSessionSetSchema } from "@/lib/sessionForm";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -28,23 +29,12 @@ import { Database } from "@/integrations/supabase/types";
 
 type Session = Database["public"]["Tables"]["sessions"]["Row"];
 
-const setSchema = z.object({
-  reps: z.coerce
-    .number()
-    .min(1, { message: "Must be at least 1 rep" })
-    .max(100, { message: "Maximum 100 reps" }),
-  weight: z.coerce
-    .number()
-    .min(0, { message: "Weight cannot be negative" })
-    .max(100000, { message: "Maximum 100000" }),
-});
-
-const sessionSchema = z.object({
+const createSessionSchema = (timed: boolean) => z.object({
   date: z.string().min(1, { message: "Date is required" }),
-  sets: z.array(setSchema).min(1, { message: "Must add at least 1 set" }),
+  sets: z.array(createSessionSetSchema(timed)).min(1, { message: "Must add at least 1 set" }),
 });
 
-type SessionFormValues = z.infer<typeof sessionSchema>;
+type SessionFormValues = z.infer<ReturnType<typeof createSessionSchema>>;
 
 type UnitType = "weight" | "distance" | "time";
 
@@ -78,6 +68,8 @@ export function EditSessionDialog({
 }: EditSessionDialogProps) {
   const { mutateAsync: updateSession, isPending } = useUpdateSession(session.exercise_id);
   const isBodyweight = isBodyweightSession(session);
+  const isTimedBodyweight = isTimedBodyweightSession(session);
+  const sessionSchema = useMemo(() => createSessionSchema(isTimedBodyweight), [isTimedBodyweight]);
   const { history } = useProfile({ enabled: open && isBodyweight, loadProfile: false });
   const [closeLoading, setCloseLoading] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"saved" | "pending" | "saving" | "invalid" | "error">("saved");
@@ -145,7 +137,7 @@ export function EditSessionDialog({
           isSupersetSecondary: session.is_superset_secondary ?? false,
           date: payload.date,
           sets: materializeSets(payload.sets as Array<{ reps: number; weight: number }>, isBodyweight,
-            bodyWeightForEdit(session, payload.date, history.data ?? [])),
+            bodyWeightForEdit(session, payload.date, history.data ?? []), isTimedBodyweight ? "time" : "weight"),
           valueMultiplier,
           suppressToast: true,
         });
@@ -168,7 +160,7 @@ export function EditSessionDialog({
 
     currentSavePromiseRef.current = savePromise;
     return savePromise;
-  }, [session, updateSession, valueMultiplier, isBodyweight, history.data]);
+  }, [session, updateSession, valueMultiplier, isBodyweight, isTimedBodyweight, history.data]);
 
   const queueAutosave = useCallback((payload: SessionFormValues) => {
     const payloadHash = getPayloadHash(payload);
@@ -208,7 +200,7 @@ export function EditSessionDialog({
         debounceRef.current = null;
       }
     };
-  }, [form, open, queueAutosave]);
+  }, [form, open, queueAutosave, sessionSchema]);
 
   const flushAutosave = useCallback(async () => {
     if (debounceRef.current) {
@@ -237,7 +229,7 @@ export function EditSessionDialog({
     }
 
     return true;
-  }, [form, persistLatest]);
+  }, [form, persistLatest, sessionSchema]);
 
   const closeDialog = useCallback(async () => {
     try {
@@ -325,11 +317,11 @@ export function EditSessionDialog({
             </div>
 
             <div className="space-y-3">
-              {isBodyweight && <BodyweightSummary weight={bodyWeight} loading={history.isLoading} />}
+              {isBodyweight && <BodyweightSummary weight={bodyWeight} loading={history.isLoading} timed={isTimedBodyweight} />}
               <div className="flex items-center justify-between">
                 <div>
                   <FormLabel>Sets ({watchedSets.length})</FormLabel>
-                  <p className="text-xs text-muted-foreground">{totalReps.toLocaleString()} total reps</p>
+                  <p className="text-xs text-muted-foreground">{totalReps.toLocaleString()} total {isTimedBodyweight ? "seconds" : "reps"}</p>
                 </div>
 
               </div>
@@ -346,9 +338,9 @@ export function EditSessionDialog({
                         name={`sets.${index}.reps`}
                         render={({ field }) => (
                           <FormItem>
-                            {index === 0 && <FormLabel>Reps</FormLabel>}
+                            {index === 0 && <FormLabel>{isTimedBodyweight ? "Time (s)" : "Reps"}</FormLabel>}
                             <FormControl>
-                              <Input type="number" inputMode="numeric" aria-label={`Set ${index + 1} repetitions`} min="1" {...field} />
+                              <Input type="number" inputMode="numeric" aria-label={`Set ${index + 1} ${isTimedBodyweight ? "duration in seconds" : "repetitions"}`} min="1" step="1" max={isTimedBodyweight ? 10000 : 100} {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>

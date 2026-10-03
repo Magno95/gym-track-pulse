@@ -42,10 +42,15 @@ test("actual migrations enforce ownership, validation, atomicity, idempotency an
     const verification = await db.exec(readFileSync(new URL("../supabase/verify_security_sync_performance.sql", import.meta.url), "utf8"));
     assert.equal(verification[0].rows.length, 13);
     for (const check of verification[0].rows) assert.equal(check.ok, true, check.check_name);
+    const timedVerification = await db.exec(readFileSync(new URL("../supabase/verify_timed_bodyweight.sql", import.meta.url), "utf8"));
+    assert.equal(timedVerification[0].rows.length, 6);
+    for (const check of timedVerification[0].rows) assert.equal(check.ok, true, check.check_name);
     const registration = readFileSync(new URL("../supabase/register_security_sync_performance.sql", import.meta.url), "utf8");
     await db.exec(registration); await db.exec(registration);
+    const timedRegistration = readFileSync(new URL("../supabase/register_timed_bodyweight.sql", import.meta.url), "utf8");
+    await db.exec(timedRegistration); await db.exec(timedRegistration);
     assert.deepEqual((await db.query("SELECT version FROM supabase_migrations.schema_migrations ORDER BY version")).rows,
-      [{ version: "20261003000000" }, { version: "20261003001000" }]);
+      [{ version: "20261003000000" }, { version: "20261003001000" }, { version: "20261003002000" }]);
     assert.equal((await db.query("SELECT md5(string_agg((to_jsonb(s) - 'value_multiplier')::text, '' ORDER BY id)) AS checksum FROM public.sessions s")).rows[0].checksum, legacyChecksum);
     const legacy = (await db.query("SELECT value,value_multiplier FROM public.sessions WHERE id=$1", [legacySession])).rows[0];
     assert.equal(Number(legacy.value), 240); assert.equal(Number(legacy.value_multiplier), 1.2);
@@ -100,6 +105,16 @@ test("actual migrations enforce ownership, validation, atomicity, idempotency an
     await assert.rejects(db.query(insert, [webcrypto.randomUUID(), exercise, "2026-10-02", sets]), /row-level security/);
     await login(alice);
     assert.equal((await db.query("DELETE FROM storage.objects WHERE name=$1 RETURNING id", [image])).rows.length, 1);
+    const plank = webcrypto.randomUUID();
+    await db.query("INSERT INTO public.exercises(id,user_id,name,category,unit,is_bodyweight) VALUES ($1,$2,'Plank','core','time',true)", [plank, alice]);
+    const timedSets = JSON.stringify([{ reps: 120, weight: 80, body_weight: 80, additional_weight: 0, duration_seconds: 120 }]);
+    await db.query(insert, [webcrypto.randomUUID(), plank, "2026-10-03", timedSets]);
+    const timed = (await db.query("SELECT reps,weight,value,sets FROM public.sessions WHERE exercise_id=$1", [plank])).rows[0];
+    assert.equal(timed.reps, 120); assert.equal(Number(timed.weight), 80); assert.equal(Number(timed.value), 9600);
+    assert.deepEqual(timed.sets, JSON.parse(timedSets));
+    await assert.rejects(db.query("UPDATE public.exercises SET unit='distance' WHERE id=$1", [plank]), /bodyweight_requires_/);
+    await assert.rejects(db.query(insert, [webcrypto.randomUUID(), plank, "2026-10-03", '[{"reps":60,"weight":80,"body_weight":80,"additional_weight":0,"duration_seconds":61}]']), /Invalid session sets/);
+    await assert.rejects(db.query(insert, [webcrypto.randomUUID(), plank, "2026-10-03", '[{"reps":60,"weight":80,"duration_seconds":60}]']), /Invalid session sets/);
     await db.exec("RESET ROLE; SET ROLE anon");
     await assert.rejects(db.query("SELECT * FROM public.get_exercise_overview($1)", [alice]), /permission denied/);
   } finally { await db.close(); }

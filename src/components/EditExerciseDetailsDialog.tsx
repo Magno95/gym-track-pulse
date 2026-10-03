@@ -224,7 +224,7 @@ export function EditExerciseDetailsDialog({
       requireUserId(userId);
       const fields = {
         name: data.name, image_url: imageUrl, description: data.description || null, unit: data.unit,
-        is_bodyweight: data.unit === "weight" && data.is_bodyweight,
+        is_bodyweight: (data.unit === "weight" || data.unit === "time") && data.is_bodyweight,
         superset_multiplier: data.superset_multiplier, personal_records: personalRecords as unknown as Json,
       };
       // Persist cleanup before the metadata commit. A failed or lost response is safe:
@@ -452,7 +452,7 @@ export function EditExerciseDetailsDialog({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Unit of Measurement</FormLabel>
-                  <Select onValueChange={(value) => { field.onChange(value); if (value !== "weight") form.setValue("is_bodyweight", false); }} value={field.value}>
+                  <Select onValueChange={(value) => { field.onChange(value); if (value === "distance") form.setValue("is_bodyweight", false); }} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select unit" />
@@ -469,7 +469,7 @@ export function EditExerciseDetailsDialog({
               )}
             />
 
-            {form.watch("unit") === "weight" && <FormField
+            {form.watch("unit") !== "distance" && <FormField
               control={form.control}
               name="is_bodyweight"
               render={({ field }) => (
@@ -478,7 +478,9 @@ export function EditExerciseDetailsDialog({
                     <FormLabel>Bodyweight exercise</FormLabel>
                     <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
                   </div>
-                  <p className="text-xs leading-relaxed text-muted-foreground">New sessions use your profile weight on the workout date, plus added weight for each set. Existing sessions keep their original loads and mode.</p>
+                  <p className="text-xs leading-relaxed text-muted-foreground">{form.watch("unit") === "time"
+                    ? "New sets record duration in seconds and use your profile weight on the workout date, plus any added load. Score = seconds × total weight. Existing sessions keep their original values and mode."
+                    : "New sessions use your profile weight on the workout date, plus added weight for each set. Existing sessions keep their original loads and mode."}</p>
                   <FormMessage />
                 </FormItem>
               )}

@@ -19,5 +19,9 @@ export function validateSession(session: { date: string; sets: SessionSet[] }, m
         throw new Error("The bodyweight snapshot and added load must match the total load.");
       }
     }
+    if (set.duration_seconds !== undefined && (!Number.isInteger(set.duration_seconds) || set.duration_seconds !== set.reps
+      || set.body_weight === undefined || set.additional_weight === undefined)) {
+      throw new Error("Timed bodyweight sets must preserve their duration and bodyweight snapshot.");
+    }
   }
 }

@@ -42,6 +42,15 @@ Per le correzioni del 3 ottobre 2026, eseguire in ordine:
 
 Il primo file è transazionale e conserva i valori delle sessioni precedenti. I vincoli `NOT VALID` controllano le nuove scritture senza modificare automaticamente eventuali dati storici irregolari. Non rieseguire il primo file se le modifiche risultano già applicate.
 
+Per gli esercizi a tempo con peso corporeo, come Plank, applicare anche
+[20261003002000_timed_bodyweight.sql](supabase/migrations/20261003002000_timed_bodyweight.sql)
+prima di pubblicare il frontend e controllare i sei risultati di
+[verify_timed_bodyweight.sql](supabase/verify_timed_bodyweight.sql). Il punteggio
+delle nuove serie è secondi × (peso corporeo alla data dell'allenamento + carico
+aggiunto); le sessioni precedenti conservano valori e modalità.
+Per esecuzioni manuali registrare la versione con
+[register_timed_bodyweight.sql](supabase/register_timed_bodyweight.sql).
+
 ## Dati offline e account
 
 Ogni account ha una coda IndexedDB separata. Le operazioni sono persistite prima di mostrare il salvataggio locale; gli errori restano recuperabili. UUID stabili evitano duplicati nei retry e il coordinamento tra schede evita invii concorrenti. I superset vengono inseriti con una singola richiesta atomica.

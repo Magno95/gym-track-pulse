@@ -1,8 +1,9 @@
 import { useProfile } from "@/hooks/useProfile";
 import { findBodyWeight, materializeSets, todayLocal } from "@/lib/bodyweight";
 import { BodyweightSummary } from "@/components/BodyweightSummary";
+import { createSessionSetSchema } from "@/lib/sessionForm";
 import { toast } from "sonner";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -32,26 +33,15 @@ import { getCachedExercises } from "@/lib/localCache";
 import { getCategoryIcon } from "@/lib/categoryIcons";
 import { useAddSession, useAddSupersetSession } from "@/hooks/useSessionMutations";
 
-const setSchema = z.object({
-  reps: z.coerce
-    .number()
-    .min(1, { message: "Must be at least 1 rep" })
-    .max(100, { message: "Maximum 100 reps" }),
-  weight: z.coerce
-    .number()
-    .min(0, { message: "Weight cannot be negative" })
-    .max(100000, { message: "Maximum 100000" }),
-});
-
-const sessionSchema = z.object({
+const createSessionSchema = (primaryTimed: boolean, secondaryTimed: boolean) => z.object({
   date: z.string().min(1, { message: "Date is required" }),
-  sets: z.array(setSchema).min(1, { message: "Must add at least 1 set" }),
+  sets: z.array(createSessionSetSchema(primaryTimed)).min(1, { message: "Must add at least 1 set" }),
   isSuperSet: z.boolean().default(false),
   secondaryExerciseId: z.string().optional(),
-  secondarySets: z.array(setSchema).optional(),
+  secondarySets: z.array(createSessionSetSchema(secondaryTimed)).optional(),
 });
 
-type SessionFormValues = z.infer<typeof sessionSchema>;
+type SessionFormValues = z.infer<ReturnType<typeof createSessionSchema>>;
 
 type UnitType = "weight" | "distance" | "time";
 
@@ -96,19 +86,22 @@ export function AddSessionDialog({
   const [selectedSecondaryExercise, setSelectedSecondaryExercise] = useState<ExerciseWithSessions | null>(null);
   const primarySetsRef = useRef<HTMLDivElement>(null);
   const secondarySetsRef = useRef<HTMLDivElement>(null);
+  const isTimedBodyweight = isBodyweight && unit === "time";
+  const secondaryIsBodyweight = !!selectedSecondaryExercise?.is_bodyweight;
+  const secondaryIsTimed = secondaryIsBodyweight && selectedSecondaryExercise?.unit === "time";
+  const sessionSchema = useMemo(() => createSessionSchema(isTimedBodyweight, secondaryIsTimed), [isTimedBodyweight, secondaryIsTimed]);
 
   const form = useForm<SessionFormValues>({
     resolver: zodResolver(sessionSchema),
     defaultValues: {
       date: todayLocal(),
-      sets: [{ reps: 10, weight: 0 }],
+      sets: [{ reps: isTimedBodyweight ? 30 : 10, weight: 0 }],
       isSuperSet: false,
       secondaryExerciseId: undefined,
       secondarySets: [{ reps: 10, weight: 0 }],
     },
   });
 
-  const secondaryIsBodyweight = !!selectedSecondaryExercise?.is_bodyweight;
   const { history } = useProfile({ enabled: open && (isBodyweight || secondaryIsBodyweight), loadProfile: false });
   const sessionDate = form.watch("date");
   const bodyWeight = findBodyWeight(history.data ?? [], sessionDate);
@@ -199,6 +192,9 @@ export function AddSessionDialog({
   };
 
   const handleSelectSecondaryExercise = (exercise: ExerciseWithSessions) => {
+    if (selectedSecondaryExercise?.unit !== exercise.unit || selectedSecondaryExercise?.is_bodyweight !== exercise.is_bodyweight) {
+      form.setValue("secondarySets", [{ reps: exercise.is_bodyweight && exercise.unit === "time" ? 30 : 10, weight: 0 }]);
+    }
     setSelectedSecondaryExercise(exercise);
     form.setValue("secondaryExerciseId", exercise.id, {
       shouldDirty: true,
@@ -225,9 +221,9 @@ export function AddSessionDialog({
     let savedSecondarySets: ReturnType<typeof materializeSets> = [];
     try {
       const weightAtDate = findBodyWeight(history.data ?? [], data.date);
-      savedPrimarySets = materializeSets(data.sets as Array<{ reps: number; weight: number }>, isBodyweight, weightAtDate);
+      savedPrimarySets = materializeSets(data.sets as Array<{ reps: number; weight: number }>, isBodyweight, weightAtDate, unit);
       if (data.isSuperSet && data.secondaryExerciseId && data.secondarySets?.length) {
-        savedSecondarySets = materializeSets(data.secondarySets as Array<{ reps: number; weight: number }>, secondaryIsBodyweight, weightAtDate);
+        savedSecondarySets = materializeSets(data.secondarySets as Array<{ reps: number; weight: number }>, secondaryIsBodyweight, weightAtDate, selectedSecondaryExercise?.unit);
       }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Could not prepare session load.");
@@ -270,16 +266,17 @@ export function AddSessionDialog({
     displayUnitLabel: string,
     scrollRef: React.RefObject<HTMLDivElement>,
     bodyweight: boolean = false,
+    timedBodyweight: boolean = false,
   ) => {
     const sets = form.watch(fieldPrefix) || [];
     const totalReps = sets.reduce((sum, set) => sum + (Number(set.reps) || 0), 0);
     return (
       <div className="space-y-3">
-        {bodyweight && <BodyweightSummary weight={bodyWeight} loading={history.isLoading} />}
+        {bodyweight && <BodyweightSummary weight={bodyWeight} loading={history.isLoading} timed={timedBodyweight} />}
         <div className="flex items-center justify-between">
           <div>
             <FormLabel>{label} ({sets.length})</FormLabel>
-            <p className="text-xs text-muted-foreground">{totalReps.toLocaleString()} total reps</p>
+            <p className="text-xs text-muted-foreground">{totalReps.toLocaleString()} total {timedBodyweight ? "seconds" : "reps"}</p>
           </div>
 
         </div>
@@ -296,9 +293,9 @@ export function AddSessionDialog({
                   name={`${fieldPrefix}.${index}.reps`}
                   render={({ field }) => (
                     <FormItem>
-                      {index === 0 && <FormLabel className="text-xs">Reps</FormLabel>}
+                      {index === 0 && <FormLabel className="text-xs">{timedBodyweight ? "Time (s)" : "Reps"}</FormLabel>}
                       <FormControl>
-                        <Input type="number" inputMode="numeric" aria-label={`Set ${index + 1} repetitions`} min="1" {...field} />
+                        <Input type="number" inputMode="numeric" aria-label={`Set ${index + 1} ${timedBodyweight ? "duration in seconds" : "repetitions"}`} min="1" step="1" max={timedBodyweight ? 10000 : 100} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -383,7 +380,7 @@ export function AddSessionDialog({
                   <p className="text-sm font-medium text-foreground">{exerciseName}</p>
                   <span className="text-sm font-semibold text-primary">{primaryScore.toLocaleString()} pts</span>
                 </div>
-                {renderSetsForm("sets", "Sets", removeSet, unitLabel, primarySetsRef, isBodyweight)}
+                {renderSetsForm("sets", "Sets", removeSet, unitLabel, primarySetsRef, isBodyweight, isTimedBodyweight)}
               </div>
 
               <div className="flex items-center justify-between p-3 rounded-lg bg-accent/10 border border-accent/20">
@@ -471,7 +468,7 @@ export function AddSessionDialog({
                           </Button>
                         </div>
                       </div>
-                      {renderSetsForm("secondarySets", "Sets", removeSecondarySet, getUnitLabel((selectedSecondaryExercise.unit || "weight") as UnitType), secondarySetsRef, secondaryIsBodyweight)}
+                      {renderSetsForm("secondarySets", "Sets", removeSecondarySet, getUnitLabel((selectedSecondaryExercise.unit || "weight") as UnitType), secondarySetsRef, secondaryIsBodyweight, secondaryIsTimed)}
                     </div>
                   )}
                 </div>
