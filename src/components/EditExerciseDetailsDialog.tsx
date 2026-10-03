@@ -1,6 +1,7 @@
 import { requireUserId } from "@/lib/authSession";
 import { processQueue, addToSyncQueue } from "@/lib/localCache";
 import { resizeExerciseImage } from "@/lib/exerciseImages";
+import { exerciseImageUrl } from "@/lib/generatedExerciseImages";
 import { Json } from "@/integrations/supabase/types";
 import { Switch } from "@/components/ui/switch";
 import { useState, useEffect, useRef } from "react";
@@ -87,8 +88,9 @@ export function EditExerciseDetailsDialog({
 }: EditExerciseDetailsDialogProps) {
   const { userId: renderedUserId } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(currentImageUrl || null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const displayedImage = exerciseImageUrl(currentName, imagePreview);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // PR state
@@ -281,14 +283,14 @@ export function EditExerciseDetailsDialog({
                 className="hidden"
               />
               
-              {imagePreview ? (
+              {displayedImage ? (
                 <div className="relative">
                   <img
-                    src={imagePreview}
+                    src={displayedImage}
                     alt="Preview"
-                    className="w-full h-40 object-cover rounded-lg"
+                    className={`w-full h-40 ${imagePreview ? "object-cover" : "object-contain bg-white"} rounded-lg`}
                   />
-                  <Button
+                  {imagePreview && <Button
                     type="button"
                     variant="destructive"
                     size="icon"
@@ -296,7 +298,7 @@ export function EditExerciseDetailsDialog({
                     onClick={handleRemoveImage}
                   >
                     <X className="h-4 w-4" />
-                  </Button>
+                  </Button>}
                 </div>
               ) : (
                 <Button
@@ -310,7 +312,7 @@ export function EditExerciseDetailsDialog({
                 </Button>
               )}
               
-              {imagePreview && (
+              {displayedImage && (
                 <Button
                   type="button"
                   variant="outline"

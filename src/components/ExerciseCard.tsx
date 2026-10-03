@@ -1,4 +1,5 @@
 import { thumbnailUrl } from "@/lib/exerciseImages";
+import { exerciseImageUrl } from "@/lib/generatedExerciseImages";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -38,6 +39,7 @@ const getUnitSuffix = (unit?: string | null) => {
 export function ExerciseCard({ exercise, onDeleted }: ExerciseCardProps) {
   const navigate = useNavigate();
   const [deleting, setDeleting] = useState(false);
+  const imageUrl = exerciseImageUrl(exercise.name, exercise.image_url);
   const latestSession = exercise.sessions[exercise.sessions.length - 1];
   const previousSession = exercise.sessions[exercise.sessions.length - 2];
   
@@ -68,20 +70,20 @@ export function ExerciseCard({ exercise, onDeleted }: ExerciseCardProps) {
           className="w-20 shrink-0 cursor-pointer self-stretch"
           onClick={() => navigate(`/exercise/${exercise.id}`)}
         >
-          {exercise.image_url ? (
+          {imageUrl ? (
             <img 
               loading="lazy" decoding="async"
-              src={thumbnailUrl(exercise.image_url)}
+              src={thumbnailUrl(imageUrl)}
               alt={exercise.name}
-              className="w-full h-full object-cover rounded-l-xl block"
+              className={`w-full h-full ${exercise.image_url?.trim() ? "object-cover" : "object-contain bg-white"} rounded-l-xl block`}
               onError={(e) => {
-                if (e.currentTarget.src !== exercise.image_url) { e.currentTarget.src = exercise.image_url!; return; }
+                if (e.currentTarget.getAttribute("src") !== imageUrl) { e.currentTarget.src = imageUrl; return; }
                 e.currentTarget.style.display = 'none';
                 e.currentTarget.nextElementSibling?.classList.remove('hidden');
               }}
             />
           ) : null}
-          <div className={`w-full h-full bg-muted flex items-center justify-center rounded-l-xl ${exercise.image_url ? 'hidden' : ''}`}>
+          <div className={`w-full h-full bg-muted flex items-center justify-center rounded-l-xl ${imageUrl ? 'hidden' : ''}`}>
             <Image className="h-6 w-6 text-muted-foreground" />
           </div>
         </div>

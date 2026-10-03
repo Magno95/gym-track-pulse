@@ -1,4 +1,5 @@
 import { isCalendarDate } from "@/lib/validation";
+import { exerciseImageUrl } from "@/lib/generatedExerciseImages";
 import { ExerciseNavigation } from "@/components/ExerciseNavigation";
 import { getSessionSets, isBodyweightSession, isTimedBodyweightSession } from "@/lib/bodyweight";
 import { useState, useCallback, lazy, Suspense } from "react";
@@ -76,6 +77,7 @@ export default function ExerciseDetail() {
     );
   }
 
+  const imageUrl = exerciseImageUrl(exercise.name, exercise.image_url);
 
   return (
     <div className="floating-page min-h-screen bg-background">
@@ -132,9 +134,9 @@ export default function ExerciseDetail() {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsContent value="details">
             <div className="flex flex-col">
-              {exercise.image_url ? (
+              {imageUrl ? (
                 <img 
-                  src={exercise.image_url} 
+                  src={imageUrl}
                   alt={exercise.name}
                   className="w-full aspect-square object-cover rounded-xl mb-6"
                   onError={(e) => {

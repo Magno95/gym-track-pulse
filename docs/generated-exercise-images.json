@@ -1,0 +1,207 @@
+{
+  "generatedOn": "2026-10-03",
+  "generator": "built-in image_gen",
+  "catalogChecked": 24,
+  "missingImagesFound": 14,
+  "integration": "Bundled default illustrations shown in cards, details and settings; user uploads take precedence.",
+  "styleReference": "https://gixmjerckbujswifueeb.supabase.co/storage/v1/object/public/exercise-images/4ee0e052-7a0c-4b59-a069-f07655cead4a-1767035275728.png",
+  "format": "WebP quality 82",
+  "assets": [
+    {
+      "name": "pulley",
+      "full": "public/exercise-images/pulley.webp",
+      "thumbnail": "public/exercise-images/pulley-thumb.webp",
+      "fullSize": [
+        1000,
+        1000
+      ],
+      "thumbnailSize": [
+        192,
+        192
+      ],
+      "prompt": "Use case: scientific-educational. Create ONE new GymTrack exercise illustration. The attached image is a STYLE reference only. Match its faceless orange athletic adult, vivid blue sleeveless shirt and blue shorts, blue shoes, clean thick dark navy outlines and flat simplified shapes, with the same palette and line weight. Use a completely solid plain PURE WHITE square background, without shadows, glow, haze, vignette, gradients, decorative backing tiles or rounded borders. The full figure and equipment must fit within the canvas, with comfortable white space. Square composition matching the reference, intended for a 1000 × 1000 image and still clear at 80 pixels wide. Correct normal anatomy, exactly two arms, two hands and two legs. No text, labels, arrows, logos, watermark, photo texture or red muscle highlighting. Exercise: SEATED LOW CABLE ROW, called Pulley. One full-body athlete seated on a simple grey low cable-row bench, feet braced against the angled foot plates, knees slightly bent, upright torso and neutral back. Both hands grip one compact V-shaped row handle, pulled toward the lower ribs, elbows close to the body. Show the cable extending horizontally from the handle toward a small low pulley in front. Three-quarter side view, full shoes and bench visible. One solid figure, no ghost copies; no rowing ergometer fan, no barbell and no overhead pulldown."
+    },
+    {
+      "name": "polpacci",
+      "full": "public/exercise-images/polpacci.webp",
+      "thumbnail": "public/exercise-images/polpacci-thumb.webp",
+      "fullSize": [
+        1000,
+        1000
+      ],
+      "thumbnailSize": [
+        192,
+        192
+      ],
+      "prompt": "Use case: scientific-educational. Create ONE new GymTrack exercise illustration. The attached image is a STYLE reference only. Match its faceless orange athletic adult, vivid blue sleeveless shirt and blue shorts, blue shoes, clean thick dark navy outlines and flat simplified shapes, with the same palette and line weight. Use a completely solid plain PURE WHITE square background, without shadows, glow, haze, vignette, gradients, decorative backing tiles or rounded borders. The full figure and equipment must fit within the canvas, with comfortable white space. Square composition matching the reference, intended for a 1000 × 1000 image and still clear at 80 pixels wide. Correct normal anatomy, exactly two arms, two hands and two legs. No text, labels, arrows, logos, watermark, photo texture or red muscle highlighting. Exercise: STANDING CALF RAISE, called Polpacci. One full-body athlete stands balanced with both forefeet on the edge of a small grey step, heels raised above the step surface and ankles extended, knees straight without locking. Side three-quarter view clearly showing the calves, the raised heels and contact of both forefeet with the step. Hands lightly touch a simple thin support rail for balance. Upright torso, no squat, no leg-extension machine, no seated pose. Full body, shoes and small step completely in frame."
+    },
+    {
+      "name": "jump-squat",
+      "full": "public/exercise-images/jump-squat.webp",
+      "thumbnail": "public/exercise-images/jump-squat-thumb.webp",
+      "fullSize": [
+        1000,
+        1000
+      ],
+      "thumbnailSize": [
+        192,
+        192
+      ],
+      "prompt": "Use case: scientific-educational. Create ONE new GymTrack exercise illustration. The attached image is a STYLE reference only. Match its faceless orange athletic adult, vivid blue sleeveless shirt and blue shorts, blue shoes, clean thick dark navy outlines and flat simplified shapes, with the same palette and line weight. Use a completely solid plain PURE WHITE square background, without shadows, glow, haze, vignette, gradients, decorative backing tiles or rounded borders. The full figure and equipment must fit within the canvas, with comfortable white space. Square composition matching the reference, intended for a 1000 × 1000 image and still clear at 80 pixels wide. Correct normal anatomy, exactly two arms, two hands and two legs. No text, labels, arrows, logos, watermark, photo texture or red muscle highlighting. Exercise: BODYWEIGHT JUMP SQUAT. Show one full-body athlete in the upward airborne phase of a squat jump: upright torso, both feet clearly above a small subtle floor line, legs extending naturally and arms forward/up for balance. A single pale navy outline crouched silhouette behind and below the main figure may indicate the starting squat position, with no arrows or text. Keep the solid main figure clearly dominant, normal anatomy, no equipment or weights. Both shoes and full head visible. Readable jump-squat icon rather than a running stride."
+    },
+    {
+      "name": "air-bike",
+      "full": "public/exercise-images/air-bike.webp",
+      "thumbnail": "public/exercise-images/air-bike-thumb.webp",
+      "fullSize": [
+        1000,
+        1000
+      ],
+      "thumbnailSize": [
+        192,
+        192
+      ],
+      "prompt": "Use case: scientific-educational. Create ONE new GymTrack exercise illustration. The attached image is a STYLE reference only. Match its faceless orange athletic adult, vivid blue sleeveless shirt and blue shorts, blue shoes, clean thick dark navy outlines and flat simplified shapes, with the same palette and line weight. Use a completely solid plain PURE WHITE square background, without shadows, glow, haze, vignette, gradients, decorative backing tiles or rounded borders. The full figure and equipment must fit within the canvas, with comfortable white space. Square composition matching the reference, intended for a 1000 × 1000 image and still clear at 80 pixels wide. Correct normal anatomy, exactly two arms, two hands and two legs. No text, labels, arrows, logos, watermark, photo texture or red muscle highlighting. Exercise: AIR BIKE / ASSAULT BIKE. Show one full-body athlete seated on a grey stationary air-resistance exercise bike, both hands gripping the two long moving upright handles and both feet on the pedals, with knees naturally bent. The machine has one large clearly visible circular fan wheel with simple radial spokes at the front, a compact frame and stable floor feet; no ordinary road-bike wheels. Three-quarter side view so the fan, seat, pedals, both arms and full figure are readable. Normal posture, no cycling helmet, no branding or text on the small console."
+    },
+    {
+      "name": "affondi-bulgari-con-rialzo",
+      "full": "public/exercise-images/affondi-bulgari-con-rialzo.webp",
+      "thumbnail": "public/exercise-images/affondi-bulgari-con-rialzo-thumb.webp",
+      "fullSize": [
+        1000,
+        1000
+      ],
+      "thumbnailSize": [
+        192,
+        192
+      ],
+      "prompt": "Use case: scientific-educational. Create ONE new GymTrack exercise illustration. The attached image is a STYLE reference only. Match its faceless orange athletic adult, vivid blue sleeveless shirt and blue shorts, blue shoes, clean thick dark navy outlines and flat simplified shapes, with the same palette and line weight. Use a completely solid plain PURE WHITE square background, without shadows, glow, haze, vignette, gradients, decorative backing tiles or rounded borders. The full figure and equipment must fit within the canvas, with comfortable white space. Square composition matching the reference, intended for a 1000 × 1000 image and still clear at 80 pixels wide. Correct normal anatomy, exactly two arms, two hands and two legs. No text, labels, arrows, logos, watermark, photo texture or red muscle highlighting. Exercise: BULGARIAN SPLIT SQUAT WITH REAR FOOT ELEVATED. One full-body athlete performs a controlled split squat with the top of the rear foot supported on a small stable grey bench behind him, the front foot flat on the floor and the front knee bent approximately 90 degrees. The rear knee points down toward the floor while the torso stays upright and hips level. Show a three-quarter side view so the front flat foot, raised rear foot, both legs and support bench are clearly distinct. Arms naturally relaxed beside the body. Bodyweight version, no dumbbells or barbell. Correct one front leg and one rear leg, no extra feet, no ordinary two-legged squat and no kneeling on the bench."
+    },
+    {
+      "name": "seated-leg-lift",
+      "full": "public/exercise-images/seated-leg-lift.webp",
+      "thumbnail": "public/exercise-images/seated-leg-lift-thumb.webp",
+      "fullSize": [
+        1000,
+        1000
+      ],
+      "thumbnailSize": [
+        192,
+        192
+      ],
+      "prompt": "Use case: scientific-educational. Create ONE new GymTrack exercise illustration. The attached image is a STYLE reference only. Match its faceless orange athletic adult, vivid blue sleeveless shirt and blue shorts, blue shoes, clean thick dark navy outlines and flat simplified shapes, with the same palette and line weight. Use a completely solid plain PURE WHITE square background, without shadows, glow, haze, vignette, gradients, decorative backing tiles or rounded borders. The full figure and equipment must fit within the canvas, with comfortable white space. Square composition matching the reference, intended for a 1000 × 1000 image and still clear at 80 pixels wide. Correct normal anatomy, exactly two arms, two hands and two legs. No text, labels, arrows, logos, watermark, photo texture or red muscle highlighting. Exercise: SEATED STRAIGHT LEG LIFT. One full-body athlete sits directly on the floor in a long-sitting position with an upright torso, one straight leg extended forward with the heel visibly lifted a short distance above the floor and the other leg straight on the floor. Both hands are planted beside the hips for light balance, shoulders relaxed, the lifting knee straight but not hyperextended. Clear three-quarter side view showing the hip flexion, gap under the raised heel, both legs and both hands. No chair, weights, machine, bench, deep back bend or standing pose. Keep the lifted leg modestly raised, not a high kick."
+    },
+    {
+      "name": "polpacci-isometrics",
+      "full": "public/exercise-images/polpacci-isometrics.webp",
+      "thumbnail": "public/exercise-images/polpacci-isometrics-thumb.webp",
+      "fullSize": [
+        1000,
+        1000
+      ],
+      "thumbnailSize": [
+        192,
+        192
+      ],
+      "prompt": "Use case: scientific-educational. Create ONE new GymTrack exercise illustration. The attached image is a STYLE reference only. Match its faceless orange athletic adult, vivid blue sleeveless shirt and blue shorts, blue shoes, clean thick dark navy outlines and flat simplified shapes, with the same palette and line weight. Use a completely solid plain PURE WHITE square background, without shadows, glow, haze, vignette, gradients, decorative backing tiles or rounded borders. The full figure and equipment must fit within the canvas, with comfortable white space. Square composition matching the reference, intended for a 1000 × 1000 image and still clear at 80 pixels wide. Correct normal anatomy, exactly two arms, two hands and two legs. No text, labels, arrows, logos, watermark, photo texture or red muscle highlighting. Exercise: ISOMETRIC SINGLE-LEG CALF RAISE HOLD. One full-body athlete stands steadily on the forefoot of one supporting leg on the edge of a small grey step, holding the heel raised with the ankle extended. The other knee is comfortably bent with the free foot hovering behind, clearly not bearing weight. Both hands lightly rest on a simple grey support rail for balance. Upright torso, side three-quarter view showing the elevated supporting heel and the single loaded calf. A still controlled hold, no movement arrows or text, no jump and no squat. Exactly two legs and two feet, both completely visible."
+    },
+    {
+      "name": "navy-seal-burpees",
+      "full": "public/exercise-images/navy-seal-burpees.webp",
+      "thumbnail": "public/exercise-images/navy-seal-burpees-thumb.webp",
+      "fullSize": [
+        1000,
+        1000
+      ],
+      "thumbnailSize": [
+        192,
+        192
+      ],
+      "prompt": "Use case: scientific-educational. Create ONE new GymTrack exercise illustration. The attached image is a STYLE reference only. Match its faceless orange athletic adult, vivid blue sleeveless shirt and blue shorts, blue shoes, clean thick dark navy outlines and flat simplified shapes, with the same palette and line weight. Use a completely solid plain PURE WHITE square background, without shadows, glow, haze, vignette, gradients, decorative backing tiles or rounded borders. The full figure and equipment must fit within the canvas, with comfortable white space. Square composition matching the reference, intended for a 1000 × 1000 image and still clear at 80 pixels wide. Correct normal anatomy, exactly two arms, two hands and two legs. No text, labels, arrows, logos, watermark, photo texture or red muscle highlighting. Exercise: NAVY SEAL BURPEES, a bodyweight burpee variation with push-ups and alternating knee drives. Make one coherent square icon with FOUR separate small full-body poses of the same athlete arranged as a clean 2-by-2 sequence with equal scale and ample spacing, no panel dividers, arrows, numbers or text. Top left: crouch with both hands on the floor, preparing to step or jump back. Top right: a low push-up with straight body, toes and hands on the floor and elbows bent. Bottom left: a high plank with both hands planted under the shoulders, one knee pulled toward the chest and the other leg extended back. Bottom right: the alternate knee drive in a high plank, with the opposite knee toward the chest and the other leg extended back. These knee-drive and push-up poses must distinguish it from a plain jumping burpee. Normal anatomy in each individual pose, exactly two arms, two legs and a single head each, no equipment."
+    },
+    {
+      "name": "alzate-manubri",
+      "full": "public/exercise-images/alzate-manubri.webp",
+      "thumbnail": "public/exercise-images/alzate-manubri-thumb.webp",
+      "fullSize": [
+        1000,
+        1000
+      ],
+      "thumbnailSize": [
+        192,
+        192
+      ],
+      "prompt": "Use case: scientific-educational. Create ONE new GymTrack exercise illustration. The attached image is a STYLE reference only. Match its faceless orange athletic adult, vivid blue sleeveless shirt and blue shorts, blue shoes, clean thick dark navy outlines and flat simplified shapes, with the same palette and line weight. Use a completely solid plain PURE WHITE square background, without shadows, glow, haze, vignette, gradients, decorative backing tiles or rounded borders. The full figure and equipment must fit within the canvas, with comfortable white space. Square composition matching the reference, intended for a 1000 × 1000 image and still clear at 80 pixels wide. Correct normal anatomy, exactly two arms, two hands and two legs. No text, labels, arrows, logos, watermark, photo texture or red muscle highlighting. Exercise: KETTLEBELL LATERAL AND FRONT RAISES (the user's exercise is named Alzate manubri, and its saved description specifies kettlebell lateral plus front raises). Make a clean two-pose exercise icon: on the left, one athlete stands upright raising two small grey kettlebells out to the sides at shoulder height with slightly bent elbows; on the right, the same athlete stands upright raising those two kettlebells forward to shoulder height. Both hands grip the curved kettlebell handles, with the round weights hanging naturally below. Both full bodies and shoes visible, equal scale, no divider or text. Exactly two separate figures, each with two arms and two legs. Clearly kettlebells, not barbells."
+    },
+    {
+      "name": "panca-inclinata-manubri",
+      "full": "public/exercise-images/panca-inclinata-manubri.webp",
+      "thumbnail": "public/exercise-images/panca-inclinata-manubri-thumb.webp",
+      "fullSize": [
+        1000,
+        1000
+      ],
+      "thumbnailSize": [
+        192,
+        192
+      ],
+      "prompt": "Use case: scientific-educational. Create ONE new GymTrack exercise illustration. The attached image is a STYLE reference only. Match its faceless orange athletic adult, vivid blue sleeveless shirt and blue shorts, blue shoes, clean thick dark navy outlines and flat simplified shapes, with the same palette and line weight. Use a completely solid plain PURE WHITE square background, without shadows, glow, haze, vignette, gradients, decorative backing tiles or rounded borders. The full figure and equipment must fit within the canvas, with comfortable white space. Square composition matching the reference, intended for a 1000 × 1000 image and still clear at 80 pixels wide. Correct normal anatomy, exactly two arms, two hands and two legs. No text, labels, arrows, logos, watermark, photo texture or red muscle highlighting. Exercise: INCLINE DUMBBELL BENCH PRESS. One full-body athlete reclines on a simple grey weight bench set to approximately 30 degrees, head and back supported and feet flat on the floor. He holds two matching grey dumbbells above his upper chest at the top of an incline press, arms extended but not hyperextended and palms facing forward. Show a three-quarter side view with both dumbbells, both arms, the inclined backrest and the bench legs clearly readable. Accurate supported torso; no flat bench, no overhead seated shoulder press, no barbell."
+    },
+    {
+      "name": "squat",
+      "full": "public/exercise-images/squat.webp",
+      "thumbnail": "public/exercise-images/squat-thumb.webp",
+      "fullSize": [
+        1000,
+        1000
+      ],
+      "thumbnailSize": [
+        192,
+        192
+      ],
+      "prompt": "Use case: scientific-educational. Create ONE new GymTrack exercise illustration. The attached image is a STYLE reference only. Match its faceless orange athletic adult, vivid blue sleeveless shirt and blue shorts, blue shoes, clean thick dark navy outlines and flat simplified shapes, with the same palette and line weight. Use a completely solid plain PURE WHITE square background, without shadows, glow, haze, vignette, gradients, decorative backing tiles or rounded borders. The full figure and equipment must fit within the canvas, with comfortable white space. Square composition matching the reference, intended for a 1000 × 1000 image and still clear at 80 pixels wide. Correct normal anatomy, exactly two arms, two hands and two legs. No text, labels, arrows, logos, watermark, photo texture or red muscle highlighting. Exercise: BARBELL BACK SQUAT. One full-body athlete in a balanced controlled squat, thighs approximately parallel to the floor, feet shoulder-width apart and heels planted, torso inclined naturally with a neutral back. A straight grey barbell with equal round plates rests across the upper back, held by both hands outside the shoulders. Show a clear three-quarter side view, both feet visible, barbell entire and uncropped. Normal knees and wrists, no bar in front of the neck and no machine."
+    },
+    {
+      "name": "wall-ball",
+      "full": "public/exercise-images/wall-ball.webp",
+      "thumbnail": "public/exercise-images/wall-ball-thumb.webp",
+      "fullSize": [
+        1000,
+        1000
+      ],
+      "thumbnailSize": [
+        192,
+        192
+      ],
+      "prompt": "Use case: scientific-educational. Create ONE new GymTrack exercise illustration. The attached image is a STYLE reference only. Match its faceless orange athletic adult, vivid blue sleeveless shirt and blue shorts, blue shoes, clean thick dark navy outlines and flat simplified shapes, with the same palette and line weight. Use a completely solid plain PURE WHITE square background, without shadows, glow, haze, vignette, gradients, decorative backing tiles or rounded borders. The full figure and equipment must fit within the canvas, with comfortable white space. Square composition matching the reference, intended for a 1000 × 1000 image and still clear at 80 pixels wide. Correct normal anatomy, exactly two arms, two hands and two legs. No text, labels, arrows, logos, watermark, photo texture or red muscle highlighting. Exercise: WALL BALL SQUAT THROW. One full-body athlete just extending from a squat and throwing one grey medicine ball upward toward a simple pale-grey wall target above head height. Show a clear three-quarter side view with both arms extended naturally toward the ball, both feet on the floor and the target on a short minimal vertical wall section. The ball is slightly above the two open hands to clearly indicate a throw. The minimal wall and target fit fully inside the square; no arrows, labels or numbers. Exactly one medicine ball and one person, no dumbbells or barbells."
+    },
+    {
+      "name": "farmer-carry",
+      "full": "public/exercise-images/farmer-carry.webp",
+      "thumbnail": "public/exercise-images/farmer-carry-thumb.webp",
+      "fullSize": [
+        1000,
+        1000
+      ],
+      "thumbnailSize": [
+        192,
+        192
+      ],
+      "prompt": "Use case: scientific-educational. Create ONE new GymTrack exercise illustration. The attached image is a STYLE reference only. Match its faceless orange athletic adult, vivid blue sleeveless shirt and blue shorts, blue shoes, clean thick dark navy outlines and flat simplified shapes, with the same palette and line weight. Use a completely solid plain PURE WHITE square background, without shadows, glow, haze, vignette, gradients, decorative backing tiles or rounded borders. The full figure and equipment must fit within the canvas, with comfortable white space. Square composition matching the reference, intended for a 1000 × 1000 image and still clear at 80 pixels wide. Correct normal anatomy, exactly two arms, two hands and two legs. No text, labels, arrows, logos, watermark, photo texture or red muscle highlighting. Exercise: FARMER CARRY. Draw one full-body man walking in a short natural stride in a three-quarter view, holding two equal heavy grey hex dumbbells down beside his thighs. Upright torso, level shoulders, straight arms, neutral wrists; one securely gripped dumbbell in each hand. It should clearly communicate walking while carrying weights, without curled elbows, overhead weights, extra hands or cropped feet."
+    },
+    {
+      "name": "pectoral-machine",
+      "full": "public/exercise-images/pectoral-machine.webp",
+      "thumbnail": "public/exercise-images/pectoral-machine-thumb.webp",
+      "fullSize": [
+        1000,
+        1000
+      ],
+      "thumbnailSize": [
+        192,
+        192
+      ],
+      "prompt": "Use case: scientific-educational. Create ONE new GymTrack exercise illustration. The attached image is a STYLE reference only. Match its faceless orange athletic adult, vivid blue sleeveless shirt and blue shorts, blue shoes, clean thick dark navy outlines and flat simplified shapes, with the same palette and line weight. Use a completely solid plain PURE WHITE square background, without shadows, glow, haze, vignette, gradients, decorative backing tiles or rounded borders. The full figure and equipment must fit within the canvas, with comfortable white space. Square composition matching the reference, intended for a 1000 × 1000 image and still clear at 80 pixels wide. Correct normal anatomy, exactly two arms, two hands and two legs. No text, labels, arrows, logos, watermark, photo texture or red muscle highlighting. Exercise: PECTORAL MACHINE, seated chest fly / pec deck. Draw one man seated upright with his back against the backrest of a simple grey pec-deck machine, feet flat on the floor, bent elbows approximately 90 degrees and both forearms vertical against the pads, bringing the two chest-fly arms together in front of his chest. The machine must clearly have a seated bench, backrest, symmetric pivoting side arms and dark forearm pads. Use a three-quarter front view so the body, both arms and the two pads are visible. If showing movement, use only subtle pale outline guides for the open pad position, while the main figure remains a single solid person. Accurate shoulders and elbows; no bench press barbell, overhead press or cable row."
+    }
+  ]
+}

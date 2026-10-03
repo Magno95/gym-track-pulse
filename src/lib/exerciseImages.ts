@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { generatedThumbnailUrl } from "@/lib/generatedExerciseImages";
 
 export function imagePath(url: string | null | undefined): string | null {
   if (!url) return null;
@@ -14,6 +15,8 @@ export function thumbnailPath(path: string): string {
   return path.split("/").length === 3 && path.endsWith(".webp") ? path.replace(/\.webp$/, "-thumb.webp") : path;
 }
 export function thumbnailUrl(url: string): string {
+  const generated = generatedThumbnailUrl(url);
+  if (generated) return generated;
   const path = imagePath(url);
   return path ? supabase.storage.from("exercise-images").getPublicUrl(thumbnailPath(path)).data.publicUrl : url;
 }
