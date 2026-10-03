@@ -45,12 +45,17 @@ test("actual migrations enforce ownership, validation, atomicity, idempotency an
     const timedVerification = await db.exec(readFileSync(new URL("../supabase/verify_timed_bodyweight.sql", import.meta.url), "utf8"));
     assert.equal(timedVerification[0].rows.length, 6);
     for (const check of timedVerification[0].rows) assert.equal(check.ok, true, check.check_name);
+    const storageVerification = await db.exec(readFileSync(new URL("../supabase/verify_storage_metadata_privacy.sql", import.meta.url), "utf8"));
+    assert.equal(storageVerification[0].rows.length, 5);
+    for (const check of storageVerification[0].rows) assert.equal(check.ok, true, check.check_name);
     const registration = readFileSync(new URL("../supabase/register_security_sync_performance.sql", import.meta.url), "utf8");
     await db.exec(registration); await db.exec(registration);
     const timedRegistration = readFileSync(new URL("../supabase/register_timed_bodyweight.sql", import.meta.url), "utf8");
     await db.exec(timedRegistration); await db.exec(timedRegistration);
+    const storageRegistration = readFileSync(new URL("../supabase/register_storage_metadata_privacy.sql", import.meta.url), "utf8");
+    await db.exec(storageRegistration); await db.exec(storageRegistration);
     assert.deepEqual((await db.query("SELECT version FROM supabase_migrations.schema_migrations ORDER BY version")).rows,
-      [{ version: "20261003000000" }, { version: "20261003001000" }, { version: "20261003002000" }]);
+      [{ version: "20261003000000" }, { version: "20261003001000" }, { version: "20261003002000" }, { version: "20261003003000" }]);
     assert.equal((await db.query("SELECT md5(string_agg((to_jsonb(s) - 'value_multiplier')::text, '' ORDER BY id)) AS checksum FROM public.sessions s")).rows[0].checksum, legacyChecksum);
     const legacy = (await db.query("SELECT value,value_multiplier FROM public.sessions WHERE id=$1", [legacySession])).rows[0];
     assert.equal(Number(legacy.value), 240); assert.equal(Number(legacy.value_multiplier), 1.2);
@@ -69,6 +74,17 @@ test("actual migrations enforce ownership, validation, atomicity, idempotency an
     await db.query("INSERT INTO public.exercises(id,user_id,name,category) VALUES ($1,$2,'Squat','legs'), ($3,$2,'Row','back')", [exercise, alice, second]);
     const image = `${alice}/${exercise}/image.webp`;
     await db.query("INSERT INTO storage.objects(bucket_id,name) VALUES ('exercise-images',$1)", [image]);
+    const legacyImage = `${exercise}-legacy.png`;
+    await db.exec("RESET ROLE");
+    await db.query("INSERT INTO storage.objects(bucket_id,name,owner_id) VALUES ('exercise-images',$1,$2)", [legacyImage, alice]);
+    await db.exec("CREATE POLICY additional_public_read ON storage.objects FOR SELECT TO public USING (bucket_id = 'exercise-images')");
+    await login(alice);
+    assert.deepEqual((await db.query("SELECT name FROM storage.objects WHERE bucket_id='exercise-images' ORDER BY name")).rows.map(row => row.name).sort(), [image, legacyImage].sort());
+    await db.exec("RESET ROLE; SET ROLE anon");
+    assert.equal((await db.query("SELECT * FROM storage.objects WHERE bucket_id='exercise-images'")).rows.length, 0);
+    await login(bob);
+    assert.equal((await db.query("SELECT * FROM storage.objects WHERE bucket_id='exercise-images'")).rows.length, 0);
+    await login(alice);
     await assert.rejects(db.query("UPDATE storage.objects SET owner_id=$1 WHERE name=$2", [bob, image]), /row-level security/);
     await assert.rejects(db.query("UPDATE public.exercises SET user_id=$1 WHERE id=$2", [bob, exercise]), /row-level security/);
     await assert.rejects(db.query("INSERT INTO storage.objects(bucket_id,name,owner_id) VALUES ('exercise-images',$1,$2)", [`${bob}/forged.webp`, bob]), /row-level security/);
@@ -98,6 +114,7 @@ test("actual migrations enforce ownership, validation, atomicity, idempotency an
     assert.equal(overview.find((row) => row.exercise.id === exercise).sessions.at(-1).id, session);
     assert.equal((await db.query("SELECT * FROM public.get_exercise_overview($1)", [bob])).rows.length, 0);
     await login(bob);
+    assert.equal((await db.query("SELECT * FROM storage.objects WHERE bucket_id='exercise-images'")).rows.length, 0);
     assert.equal((await db.query("SELECT * FROM public.exercises")).rows.length, 0);
     assert.equal((await db.query("SELECT * FROM public.sessions")).rows.length, 0);
     assert.equal((await db.query("UPDATE storage.objects SET name='stolen.webp' WHERE name=$1 RETURNING id", [image])).rows.length, 0);

@@ -1,5 +1,5 @@
 import { thumbnailUrl } from "@/lib/exerciseImages";
-import { exerciseImageUrl } from "@/lib/generatedExerciseImages";
+import { exerciseImageUrl, generatedThumbnailUrl } from "@/lib/generatedExerciseImages";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -40,6 +40,7 @@ export function ExerciseCard({ exercise, onDeleted }: ExerciseCardProps) {
   const navigate = useNavigate();
   const [deleting, setDeleting] = useState(false);
   const imageUrl = exerciseImageUrl(exercise.name, exercise.image_url);
+  const isDefaultImage = !!imageUrl && generatedThumbnailUrl(imageUrl) !== null;
   const latestSession = exercise.sessions[exercise.sessions.length - 1];
   const previousSession = exercise.sessions[exercise.sessions.length - 2];
   
@@ -75,7 +76,7 @@ export function ExerciseCard({ exercise, onDeleted }: ExerciseCardProps) {
               loading="lazy" decoding="async"
               src={thumbnailUrl(imageUrl)}
               alt={exercise.name}
-              className={`w-full h-full ${exercise.image_url?.trim() ? "object-cover" : "object-contain bg-white"} rounded-l-xl block`}
+              className={`w-full h-full ${isDefaultImage ? "object-contain bg-white" : "object-cover"} rounded-l-xl block`}
               onError={(e) => {
                 if (e.currentTarget.getAttribute("src") !== imageUrl) { e.currentTarget.src = imageUrl; return; }
                 e.currentTarget.style.display = 'none';
