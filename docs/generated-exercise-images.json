@@ -3,7 +3,8 @@
   "generator": "built-in image_gen",
   "catalogChecked": 24,
   "missingImagesFound": 14,
-  "integration": "Bundled default illustrations shown in cards, details and settings; user uploads take precedence.",
+  "integration": "Bundled default illustrations shown in cards, details and settings; 14 image URLs persisted for the checked catalog after publication, preserving 10 existing user uploads and retaining illustrations after renaming an exercise.",
+  "catalogWithImagesAfterUpdate": 24,
   "styleReference": "https://gixmjerckbujswifueeb.supabase.co/storage/v1/object/public/exercise-images/4ee0e052-7a0c-4b59-a069-f07655cead4a-1767035275728.png",
   "format": "WebP quality 82",
   "assets": [
