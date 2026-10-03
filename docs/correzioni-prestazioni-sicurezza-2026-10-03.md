@@ -82,6 +82,12 @@ La CI ha successivamente segnalato sei vulnerabilità alte della catena `Tailwin
 
 `lovable-tagger` 1.3.5 supporta già Tailwind 4, ma importa ancora Tailwind 3 per la vecchia configurazione. La [versione locale documentata](../tools/lovable-tagger/README.md) elimina esclusivamente quel percorso e le sue dipendenze. I test verificano l'estrazione del tema reale e il tracciamento della sorgente JSX; l'editor visuale resta disponibile. Installazione pulita e audit passano senza esclusioni o riduzioni della soglia della CI. Tailwind 4 richiede Safari 16.4+, Chrome 111+ o Firefox 128+.
 
+### Immagini degli esercizi e verifica Storage
+
+Il catalogo dell'account controllato comprende 24 esercizi, dei quali 14 senza immagine. Sono state generate 14 illustrazioni nello stile delle immagini esistenti: sfondo bianco, atleta arancione con abbigliamento blu, contorni scuri e attrezzi grigi. I file WebP sono di 1.000 × 1.000 pixel, con miniature di 192 × 192 pixel. Le immagini caricate dall'utente hanno precedenza sulle illustrazioni predefinite. Il [manifest con prompt e percorsi](generated-exercise-images.json) documenta tutti gli asset. Il controllo HTTP della pubblicazione del 3 ottobre conferma che tutti i 28 file restituiscono `200`, il tipo `image/webp` e lo stesso hash dei file nel repository.
+
+La verifica della nuova policy Storage falliva perché PostgreSQL rappresenta `CURRENT_USER` in maiuscolo in `pg_policies.qual`, mentre gli script cercavano `current_user` con `LIKE`. La verifica e la registrazione ora usano `ILIKE` per questa parola chiave e controllano anche il ruolo `public` e il comando `SELECT` della policy restrittiva. La migrazione non cambia per questa correzione. Il test esegue tutti i file SQL, verifica la registrazione ripetuta e prova che utenti anonimi e altri proprietari non possano elencare le immagini, anche in presenza di un'ulteriore policy permissiva. Tutti i 38 test passano dopo la correzione.
+
 ## Recupero delle modifiche precedenti
 
 Le nuove operazioni hanno sempre `userId`, UUID persistiti e una versione della modifica. Il banner mostra il salvataggio locale, conserva gli errori e permette un export JSON delle sole operazioni del relativo account. La conferma del server elimina dalla coda soltanto la versione effettivamente inviata.

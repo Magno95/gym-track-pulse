@@ -13,7 +13,8 @@ WITH checks(check_name, ok) AS (
   ('restrictive ownership guard active', EXISTS (
     SELECT 1 FROM pg_policies WHERE schemaname = 'storage' AND tablename = 'objects'
       AND policyname = 'Exercise image metadata requires ownership' AND cmd = 'SELECT'
-      AND permissive = 'RESTRICTIVE' AND qual LIKE '%current_user%' AND qual LIKE '%owner_id%'
+      AND permissive = 'RESTRICTIVE' AND roles = ARRAY['public']::name[]
+      AND qual ILIKE '%current_user%' AND qual LIKE '%owner_id%'
   )),
   ('public image URLs remain available', EXISTS (
     SELECT 1 FROM storage.buckets WHERE id = 'exercise-images' AND public

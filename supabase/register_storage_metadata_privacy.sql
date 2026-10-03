@@ -9,8 +9,9 @@ BEGIN
       AND policyname = 'Owners read exercise image metadata' AND cmd = 'SELECT'
       AND roles = ARRAY['authenticated']::name[] AND qual LIKE '%owner_id%' AND qual LIKE '%auth.uid%')
     OR NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'storage' AND tablename = 'objects'
-      AND policyname = 'Exercise image metadata requires ownership' AND permissive = 'RESTRICTIVE'
-      AND qual LIKE '%current_user%' AND qual LIKE '%owner_id%')
+      AND policyname = 'Exercise image metadata requires ownership' AND cmd = 'SELECT'
+      AND permissive = 'RESTRICTIVE' AND roles = ARRAY['public']::name[]
+      AND qual ILIKE '%current_user%' AND qual LIKE '%owner_id%')
   THEN
     RAISE EXCEPTION 'Apply and verify 20261003003000 before registering it';
   END IF;
