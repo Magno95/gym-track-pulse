@@ -1,5 +1,6 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
 import { fileURLToPath } from "node:url";
 import { readFileSync } from "node:fs";
 import { componentTagger } from "lovable-tagger";
@@ -15,7 +16,7 @@ export default defineConfig(({ mode }) => ({
     port: 5174,
     strictPort: true,
   },
-  plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
+  plugins: [react(), tailwindcss(), mode === "development" && componentTagger()].filter(Boolean),
   build: { manifest: true },
   define: {
     __APP_VERSION__: JSON.stringify(packageJson.version),

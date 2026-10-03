@@ -43,7 +43,7 @@ export default function Profile() {
   };
 
   return <div className="floating-page min-h-screen bg-background">
-    <header className="sticky top-0 z-10 border-b border-border/50 bg-background/95 backdrop-blur-sm">
+    <header className="sticky top-0 z-10 border-b border-border/50 bg-background/95 backdrop-blur-xs">
       <div className="container mx-auto flex max-w-2xl items-center gap-3 px-4 py-4">
         <Button asChild variant="ghost" size="icon"><Link to="/" aria-label="Back to exercises"><ArrowLeft className="h-5 w-5" /></Link></Button>
         <h1 className="flex-1 text-xl font-bold">Profile</h1>
@@ -57,7 +57,7 @@ export default function Profile() {
       </div>
       {(profile.isError || history.isError) && <p role="alert" className="rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-sm text-destructive">{schemaMissing ? "Profile setup is pending. Apply the profile/bodyweight database migration to enable measurements." : "Could not refresh your profile. Check your connection and try again."}<Button variant="link" className="px-2" onClick={() => { profile.refetch(); history.refetch(); }}>Retry</Button></p>}
       <div className="grid grid-cols-2 gap-3">
-        <Card className="border-primary/15 bg-gradient-to-br from-primary/10 to-card p-5">
+        <Card className="border-primary/15 bg-linear-to-br from-primary/10 to-card p-5">
           <div className="mb-3 flex items-center gap-2 text-sm text-muted-foreground"><Scale className="h-4 w-4 text-primary" />Current weight</div>
           <p className="text-3xl font-bold tracking-tight tabular-nums">{currentWeight ?? "—"}<span className="ml-1 text-sm font-normal text-muted-foreground">kg</span></p>
           <p className="mt-2 text-xs text-muted-foreground">{change !== null && measurements.length > 1 ? `${change > 0 ? "+" : ""}${change} kg since your first entry` : "Your latest measurement"}</p>

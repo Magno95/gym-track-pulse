@@ -20,7 +20,7 @@ export function FloatingNavigation() {
   const onHome = location.pathname === "/";
 
   const itemClass = (active: boolean) => cn(
-    "flex min-h-14 flex-1 flex-col items-center justify-center gap-1 rounded-full text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+    "flex min-h-14 flex-1 flex-col items-center justify-center gap-1 rounded-full text-xs font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary",
     active ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground",
   );
 
@@ -31,7 +31,7 @@ export function FloatingNavigation() {
         <Dumbbell className="h-6 w-6" aria-hidden="true" /><span>Exercises</span>
       </Link>
       <Button size="icon" aria-label="Add exercise or session" onClick={() => setAction("choose")}
-        className="mx-5 h-14 w-14 shrink-0 rounded-full bg-gradient-to-br from-primary to-primary/80 shadow-lg shadow-primary/20 transition-transform active:scale-95 motion-reduce:transition-none">
+        className="mx-5 h-14 w-14 shrink-0 rounded-full bg-linear-to-br from-primary to-primary/80 shadow-lg shadow-primary/20 transition-transform active:scale-95 motion-reduce:transition-none">
         <Plus className="h-7 w-7" aria-hidden="true" />
       </Button>
       <Link to="/?tab=sessions" aria-current={onHome && params.get("tab") === "sessions" ? "page" : undefined}

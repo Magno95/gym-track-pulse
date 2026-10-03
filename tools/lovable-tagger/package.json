@@ -1,0 +1,16 @@
+{
+  "name": "lovable-tagger",
+  "version": "1.3.5-gymtrack.1",
+  "private": true,
+  "type": "module",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "license": "MIT",
+  "author": "Emil Fagerholm",
+  "dependencies": {
+    "@tailwindcss/node": "^4.3.3"
+  },
+  "peerDependencies": {
+    "vite": ">=5.0.0 <9.0.0"
+  }
+}

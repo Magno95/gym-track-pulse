@@ -29,6 +29,8 @@ La build include il typecheck strict. I test eseguono la coda reale su IndexedDB
 
 `bundle:stats` richiede una build precedente e somma i moduli JavaScript necessari all'avvio di ogni schermata, comprese le dipendenze statiche condivise. Le dipendenze caricate successivamente con import dinamici sono escluse. La CI usa Node 24 e verifica installazione, lint, test, build e audit.
 
+Gli stili usano Tailwind 4 con il plugin Vite. Sono supportati Safari 16.4+, Chrome 111+ e Firefox 128+, secondo i requisiti di Tailwind. Il plugin Lovable è una [versione locale adattata a Tailwind 4](tools/lovable-tagger/README.md), che mantiene l'editor visuale ed elimina la dipendenza vulnerabile da Tailwind 3. `package-lock.json` include questa dipendenza locale: conservare `tools/lovable-tagger` nei checkout e nei deploy.
+
 ## Database e rilascio
 
 Applicare le migrazioni prima di pubblicare questo frontend. Il database ospitato si gestisce nel progetto Lovable, **Cloud → SQL editor**. La migrazione profilo/peso `20261002223000` è documentata in [docs/bodyweight.md](docs/bodyweight.md).

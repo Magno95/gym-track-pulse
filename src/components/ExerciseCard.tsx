@@ -65,7 +65,7 @@ export function ExerciseCard({ exercise, onDeleted }: ExerciseCardProps) {
       <div className="flex h-full">
         {/* Image on the left */}
         <div 
-          className="w-20 flex-shrink-0 cursor-pointer self-stretch"
+          className="w-20 shrink-0 cursor-pointer self-stretch"
           onClick={() => navigate(`/exercise/${exercise.id}`)}
         >
           {exercise.image_url ? (
