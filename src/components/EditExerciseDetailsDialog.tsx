@@ -1,3 +1,8 @@
+import { requireUserId } from "@/lib/authSession";
+import { processQueue, addToSyncQueue } from "@/lib/localCache";
+import { resizeExerciseImage } from "@/lib/exerciseImages";
+import { Json } from "@/integrations/supabase/types";
+import { Switch } from "@/components/ui/switch";
 import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -32,6 +37,9 @@ import { toast } from "sonner";
 import { getCachedExercises, setCachedExercises } from "@/lib/localCache";
 import { Upload, X, Image as ImageIcon, Trophy, Plus, Trash2, Edit2, Check } from "lucide-react";
 import { format } from "date-fns";
+import { todayLocal } from "@/lib/bodyweight";
+import { isCalendarDate } from "@/lib/validation";
+import { useAuth } from "@/hooks/useAuth";
 
 interface PersonalRecord {
   text: string;
@@ -39,9 +47,10 @@ interface PersonalRecord {
 }
 
 const detailsSchema = z.object({
-  name: z.string().min(1, { message: "Name is required" }).max(100, { message: "Name must be less than 100 characters" }),
+  name: z.string().trim().min(1, { message: "Name is required" }).max(100, { message: "Name must be less than 100 characters" }),
   description: z.string().max(1000, { message: "Description must be less than 1000 characters" }),
   unit: z.enum(["weight", "distance", "time"]),
+  is_bodyweight: z.boolean().default(false),
   superset_multiplier: z.coerce.number().min(1, "Multiplier must be at least 1").max(5, "Multiplier must be at most 5"),
 });
 
@@ -53,9 +62,11 @@ interface EditExerciseDetailsDialogProps {
   currentImageUrl?: string | null;
   currentDescription?: string | null;
   currentUnit?: string | null;
+  currentIsBodyweight?: boolean;
   currentSupersetMultiplier?: number | null;
   currentPersonalRecords?: PersonalRecord[] | null;
   open: boolean;
+  inline?: boolean;
   onOpenChange: (open: boolean) => void;
   onDetailsUpdated: () => void;
 }
@@ -66,12 +77,15 @@ export function EditExerciseDetailsDialog({
   currentImageUrl,
   currentDescription,
   currentUnit,
+  currentIsBodyweight = false,
   currentSupersetMultiplier,
   currentPersonalRecords,
   open,
+  inline = false,
   onOpenChange,
   onDetailsUpdated,
 }: EditExerciseDetailsDialogProps) {
+  const { userId: renderedUserId } = useAuth();
   const [loading, setLoading] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -89,6 +103,7 @@ export function EditExerciseDetailsDialog({
       name: currentName || "",
       description: currentDescription || "",
       unit: (currentUnit as "weight" | "distance" | "time") || "weight",
+      is_bodyweight: currentIsBodyweight,
       superset_multiplier: currentSupersetMultiplier || 1.2,
     },
   });
@@ -99,16 +114,19 @@ export function EditExerciseDetailsDialog({
         name: currentName || "",
         description: currentDescription || "",
         unit: (currentUnit as "weight" | "distance" | "time") || "weight",
+        is_bodyweight: currentIsBodyweight,
         superset_multiplier: currentSupersetMultiplier || 1.2,
       });
       setImagePreview(currentImageUrl || null);
       setSelectedFile(null);
-      setPersonalRecords(currentPersonalRecords || []);
+      setPersonalRecords(Array.isArray(currentPersonalRecords) ? currentPersonalRecords.filter((record) =>
+        record && typeof record === "object" && typeof record.text === "string"
+          && typeof record.date === "string" && isCalendarDate(record.date)) : []);
       setNewPrText("");
       setEditingPrIndex(null);
       setEditingPrText("");
     }
-  }, [open, currentName, currentImageUrl, currentDescription, currentUnit, currentSupersetMultiplier, currentPersonalRecords, form]);
+  }, [open, currentName, currentImageUrl, currentDescription, currentUnit, currentIsBodyweight, currentSupersetMultiplier, currentPersonalRecords, form]);
 
   const handleAddPr = () => {
     if (!newPrText.trim()) return;
@@ -118,7 +136,7 @@ export function EditExerciseDetailsDialog({
     }
     const newPr: PersonalRecord = {
       text: newPrText.trim(),
-      date: new Date().toISOString().split("T")[0],
+      date: todayLocal(),
     };
     setPersonalRecords([newPr, ...personalRecords]);
     setNewPrText("");
@@ -150,23 +168,18 @@ export function EditExerciseDetailsDialog({
     setEditingPrText("");
   };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (!file.type.startsWith("image/")) {
-        toast.error("Please select an image file");
-        return;
-      }
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error("Image must be less than 5MB");
-        return;
-      }
-      setSelectedFile(file);
+      let resized: File;
+      try { resized = await resizeExerciseImage(file, 1280); }
+      catch (error) { toast.error(error instanceof Error ? error.message : "Could not open image."); return; }
+      setSelectedFile(resized);
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result as string);
       };
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(resized);
     }
   };
 
@@ -178,87 +191,71 @@ export function EditExerciseDetailsDialog({
     }
   };
 
-  const uploadImage = async (file: File): Promise<string> => {
-    const fileExt = file.name.split(".").pop();
-    const fileName = `${exerciseId}-${Date.now()}.${fileExt}`;
-    const filePath = `${fileName}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from("exercise-images")
-      .upload(filePath, file, { upsert: true });
-
-    if (uploadError) throw uploadError;
-
-    const { data: { publicUrl } } = supabase.storage
-      .from("exercise-images")
-      .getPublicUrl(filePath);
-
-    return publicUrl;
+  const uploadImage = async (file: File, userId: string): Promise<string> => {
+    const path = `${userId}/${exerciseId}/${crypto.randomUUID()}.webp`;
+    const url = supabase.storage.from("exercise-images").getPublicUrl(path).data.publicUrl;
+    const thumbnail = await resizeExerciseImage(file, 192);
+    requireUserId(userId);
+    // Durable cleanup waits ten minutes so uploads/metadata writes can finish.
+    // It then checks the server reference, including when the save response was lost.
+    await addToSyncQueue({ type: "delete_image", payload: { imageUrl: url } }, userId);
+    const { error } = await supabase.storage.from("exercise-images").upload(path, file, { upsert: false, contentType: "image/webp" });
+    if (error) throw error;
+    requireUserId(userId);
+    const thumb = await supabase.storage.from("exercise-images").upload(path.replace(/\.webp$/, "-thumb.webp"), thumbnail, { upsert: false, contentType: "image/webp" });
+    if (thumb.error) throw thumb.error;
+    return url;
   };
 
   const onSubmit = async (data: DetailsFormValues) => {
     try {
+      const userId = requireUserId(renderedUserId);
       setLoading(true);
-      
-      let imageUrl = imagePreview;
-      
-      // If a new file was selected, upload it
-      if (selectedFile) {
-        imageUrl = await uploadImage(selectedFile);
-      } else if (!imagePreview && currentImageUrl) {
-        // Image was removed
-        imageUrl = null;
+      if (personalRecords.length > 3 || personalRecords.some((record) => !record.text.trim() || record.text.length > 500)) {
+        throw new Error("Enter up to three personal records, each up to 500 characters.");
       }
-
-      const { error } = await supabase
-        .from("exercises")
-        .update({
-          name: data.name,
-          image_url: imageUrl,
-          description: data.description || null,
-          unit: data.unit,
-          superset_multiplier: data.superset_multiplier,
-          personal_records: personalRecords as unknown as null,
-        })
-        .eq("id", exerciseId);
-
-      if (error) throw error;
-
-      // Update localStorage cache
+      await processQueue({ force: true });
+      requireUserId(userId);
+      // Verify creation was acknowledged before editing an exercise that was added offline.
+      const existing = await supabase.from("exercises").select("id,image_url").eq("id", exerciseId).eq("user_id", userId).single();
+      if (existing.error) throw existing.error;
+      if (existing.data.image_url !== (currentImageUrl ?? null)) throw new Error("The image changed in another window. Reload the settings before saving.");
+      const imageUrl = selectedFile ? await uploadImage(selectedFile, userId) : imagePreview;
+      requireUserId(userId);
+      const fields = {
+        name: data.name, image_url: imageUrl, description: data.description || null, unit: data.unit,
+        is_bodyweight: data.unit === "weight" && data.is_bodyweight,
+        superset_multiplier: data.superset_multiplier, personal_records: personalRecords as unknown as Json,
+      };
+      // Persist cleanup before the metadata commit. A failed or lost response is safe:
+      // delayed cleanup checks whether this image is still referenced on the server.
+      if (currentImageUrl && currentImageUrl !== imageUrl) {
+        await addToSyncQueue({ type: "delete_image", payload: { imageUrl: currentImageUrl } }, userId);
+      }
+      requireUserId(userId);
+      let update = supabase.from("exercises").update(fields).eq("id", exerciseId).eq("user_id", userId);
+      update = currentImageUrl ? update.eq("image_url", currentImageUrl) : update.is("image_url", null);
+      const result = await update.select("id,image_url").single();
+      if (result.error) throw result.error;
+      requireUserId(userId);
       const cache = getCachedExercises();
-      if (cache) {
-        const ex = cache.find(e => e.id === exerciseId);
-        if (ex) {
-          ex.name = data.name;
-          ex.description = data.description || null;
-          ex.unit = data.unit;
-          ex.superset_multiplier = data.superset_multiplier;
-          ex.image_url = imageUrl;
-          ex.personal_records = personalRecords as any;
-          setCachedExercises(cache);
-        }
-      }
-
-      toast.success("Exercise details updated successfully");
-      onOpenChange(false);
-      onDetailsUpdated();
+      if (cache) setCachedExercises(cache.map((exercise) => exercise.id === exerciseId ? { ...exercise, ...fields } : exercise));
+      toast.success("Exercise details saved"); onOpenChange(false); onDetailsUpdated();
     } catch (error) {
-      console.error("Error updating exercise details:", error);
-      toast.error("Failed to update exercise details");
-    } finally {
-      setLoading(false);
-    }
+      // Never delete a new upload here: a lost response may have followed a committed update.
+      // The durable cleanup operation checks the server reference before removing it.
+      toast.error(error instanceof Error ? error.message : "Could not update exercise details. Please retry.");
+    } finally { setLoading(false); }
   };
 
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+  const content = (
+    <>
+        {inline ? <div className="mb-5"><h2 className="text-xl font-semibold">Exercise settings</h2><p className="mt-1 text-sm text-muted-foreground">Manage details, bodyweight mode and workout preferences.</p></div> : <DialogHeader>
           <DialogTitle>Edit Exercise Details</DialogTitle>
           <DialogDescription>
             Update the exercise name, image and description.
           </DialogDescription>
-        </DialogHeader>
+        </DialogHeader>}
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
@@ -279,7 +276,7 @@ export function EditExerciseDetailsDialog({
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/*"
+                accept="image/jpeg,image/png,image/webp"
                 onChange={handleFileSelect}
                 className="hidden"
               />
@@ -417,7 +414,7 @@ export function EditExerciseDetailsDialog({
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium truncate">{pr.text}</p>
                             <p className="text-xs text-muted-foreground">
-                              {format(new Date(pr.date), "dd/MM/yyyy")}
+                              {format(new Date(`${pr.date}T12:00:00`), "dd/MM/yyyy")}
                             </p>
                           </div>
                           <Button
@@ -455,7 +452,7 @@ export function EditExerciseDetailsDialog({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Unit of Measurement</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+                  <Select onValueChange={(value) => { field.onChange(value); if (value !== "weight") form.setValue("is_bodyweight", false); }} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select unit" />
@@ -471,6 +468,21 @@ export function EditExerciseDetailsDialog({
                 </FormItem>
               )}
             />
+
+            {form.watch("unit") === "weight" && <FormField
+              control={form.control}
+              name="is_bodyweight"
+              render={({ field }) => (
+                <FormItem className="rounded-xl border border-primary/20 bg-primary/5 p-4">
+                  <div className="flex items-center justify-between gap-4">
+                    <FormLabel>Bodyweight exercise</FormLabel>
+                    <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                  </div>
+                  <p className="text-xs leading-relaxed text-muted-foreground">New sessions use your profile weight on the workout date, plus added weight for each set. Existing sessions keep their original loads and mode.</p>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />}
 
             <FormField
               control={form.control}
@@ -493,21 +505,25 @@ export function EditExerciseDetailsDialog({
               )}
             />
             <div className="flex gap-3 pt-4">
-              <Button
+              {!inline && <Button
                 type="button"
                 variant="outline"
                 onClick={() => onOpenChange(false)}
                 className="flex-1"
               >
                 Cancel
-              </Button>
+              </Button>}
               <Button type="submit" className="flex-1" disabled={loading}>
                 {loading ? "Saving..." : "Save Details"}
               </Button>
             </div>
           </form>
         </Form>
-      </DialogContent>
-    </Dialog>
+    </>
   );
+
+  if (inline) return <div className="rounded-2xl border border-border/50 bg-card p-5 sm:p-6">{content}</div>;
+  return <Dialog open={open} onOpenChange={onOpenChange}>
+    <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">{content}</DialogContent>
+  </Dialog>;
 }

@@ -1,12 +1,13 @@
-import { useState, useEffect } from "react";
+import { useMemo } from "react";
+import { useDaySession } from "@/hooks/useExercises";
+import { QueryError } from "@/components/QueryError";
+import { isCalendarDate } from "@/lib/validation";
 import { useParams, useNavigate } from "react-router-dom";
-import { supabaseStore, ExerciseWithSessions } from "@/lib/supabaseStore";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, Dumbbell, Zap } from "lucide-react";
 import { format } from "date-fns";
 import { enUS } from "date-fns/locale";
-import { toast } from "sonner";
 import { getCategoryIcon } from "@/lib/categoryIcons";
 
 interface SessionExercise {
@@ -22,6 +23,7 @@ interface SessionExercise {
   totalReps: number;
   supersetId: string | null;
   isSupersetSecondary: boolean;
+  valueMultiplier: number;
 }
 
 interface SupersetGroup {
@@ -42,64 +44,20 @@ const getUnitSuffix = (unit?: string | null) => {
 const SessionDetail = () => {
   const { date } = useParams<{ date: string }>();
   const navigate = useNavigate();
-  const [exercises, setExercises] = useState<SessionExercise[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [totalValue, setTotalValue] = useState(0);
-
-  useEffect(() => {
-    const loadSessionData = async () => {
-      if (!date) return;
-      
-      try {
-        setLoading(true);
-        const allExercises = await supabaseStore.getAll();
-        
-        const sessionExercises: SessionExercise[] = [];
-        let total = 0;
-        
-        allExercises.forEach((exercise) => {
-          const sessionsForDate = exercise.sessions.filter(
-            (s) => s.date === date
-          );
-          
-          sessionsForDate.forEach((session) => {
-            const sets = Array.isArray(session.sets)
-              ? (session.sets as Array<{ reps?: number }>)
-              : [];
-            const totalReps = sets.length > 0
-              ? sets.reduce((sum, set) => sum + (Number(set.reps) || 0), 0)
-              : session.series * session.reps;
-
-            sessionExercises.push({
-              sessionId: session.id,
-              exerciseId: exercise.id,
-              exerciseName: exercise.name,
-              category: exercise.category,
-              unit: exercise.unit,
-              value: session.value,
-              series: session.series,
-              reps: session.reps,
-              weight: session.weight,
-              totalReps,
-              supersetId: session.superset_id,
-              isSupersetSecondary: session.is_superset_secondary ?? false,
-            });
-            total += session.value;
-          });
-        });
-        
-        setExercises(sessionExercises);
-        setTotalValue(total);
-      } catch (error) {
-        console.error("Error loading session:", error);
-        toast.error("Failed to load session");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadSessionData();
-  }, [date]);
+  const { data, isLoading: loading, isError, refetch, hasCompleteHistory } = useDaySession(date && isCalendarDate(date) ? date : undefined);
+  const exercises = useMemo<SessionExercise[]>(() => data.flatMap((exercise) =>
+    exercise.sessions.filter((session) => session.date === date).map((session) => {
+      const sets = Array.isArray(session.sets) ? session.sets as Array<{ reps?: number }> : [];
+      return {
+        sessionId: session.id, exerciseId: exercise.id, exerciseName: exercise.name,
+        category: exercise.category, unit: exercise.unit, value: session.value,
+        series: session.series, reps: session.reps, weight: session.weight,
+        totalReps: sets.length ? sets.reduce((sum, set) => sum + (Number(set.reps) || 0), 0) : session.series * session.reps,
+        supersetId: session.superset_id, isSupersetSecondary: session.is_superset_secondary ?? false,
+        valueMultiplier: session.value_multiplier ?? 1,
+      };
+    })), [data, date]);
+  const totalValue = exercises.reduce((sum, exercise) => sum + exercise.value, 0);
 
   // Group exercises: supersets together, regular exercises separate
   const groupedExercises = () => {
@@ -141,7 +99,9 @@ const SessionDetail = () => {
     );
   }
 
-  if (!date || exercises.length === 0) {
+  if (isError && !exercises.length) return <div className="p-8"><QueryError onRetry={() => void refetch()} /></div>;
+
+  if (!date || !isCalendarDate(date) || exercises.length === 0) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
         <p className="text-muted-foreground">Session not found</p>
@@ -153,7 +113,7 @@ const SessionDetail = () => {
     );
   }
 
-  const formattedDate = format(new Date(date), "EEEE, MMMM d, yyyy", { locale: enUS });
+  const formattedDate = format(new Date(`${date}T12:00:00`), "EEEE, MMMM d, yyyy", { locale: enUS });
   const totalSets = exercises.reduce((sum, exercise) => sum + exercise.series, 0);
   const totalReps = exercises.reduce((sum, exercise) => sum + exercise.totalReps, 0);
 
@@ -175,7 +135,7 @@ const SessionDetail = () => {
                 {exercise.exerciseName}
               </p>
               {exercise.isSupersetSecondary && (
-                <span className="text-xs text-accent font-medium">1.2x</span>
+                <span className="text-xs text-accent font-medium">{exercise.valueMultiplier.toFixed(2)}x</span>
               )}
             </div>
             <p className="text-sm text-muted-foreground capitalize">
@@ -209,7 +169,7 @@ const SessionDetail = () => {
                 {formattedDate}
               </h1>
               <p className="text-sm text-muted-foreground">
-                {exercises.length} exercises • {totalValue.toLocaleString()} total points
+                {exercises.length} exercises • {totalValue.toLocaleString()} {hasCompleteHistory ? "total" : "available"} points
               </p>
               <p className="text-xs text-muted-foreground">
                 {totalSets.toLocaleString()} sets • {totalReps.toLocaleString()} reps
@@ -221,6 +181,10 @@ const SessionDetail = () => {
 
       {/* Exercise List */}
       <div className="container max-w-2xl mx-auto px-4 py-6 space-y-3">
+        {isError && <QueryError onRetry={() => void refetch()} />}
+        {!hasCompleteHistory && <p role="status" className="text-sm text-muted-foreground">
+          Only changes saved on this device are available. Connect to load the full day.
+        </p>}
         {/* Superset Cards */}
         {supersets.map((superset) => (
           <Card

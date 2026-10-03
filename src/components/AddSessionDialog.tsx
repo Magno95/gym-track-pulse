@@ -1,3 +1,7 @@
+import { useProfile } from "@/hooks/useProfile";
+import { findBodyWeight, materializeSets, todayLocal } from "@/lib/bodyweight";
+import { BodyweightSummary } from "@/components/BodyweightSummary";
+import { toast } from "sonner";
 import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -66,6 +70,10 @@ interface AddSessionDialogProps {
   unit?: string | null;
   supersetMultiplier?: number | null;
   onSessionAdded: () => void;
+  isBodyweight?: boolean;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  hideTrigger?: boolean;
 }
 
 export function AddSessionDialog({
@@ -74,8 +82,14 @@ export function AddSessionDialog({
   unit = "weight",
   supersetMultiplier = 1.2,
   onSessionAdded,
+  isBodyweight = false,
+  open: controlledOpen,
+  onOpenChange,
+  hideTrigger = false,
 }: AddSessionDialogProps) {
-  const [open, setOpen] = useState(false);
+  const [localOpen, setLocalOpen] = useState(false);
+  const open = controlledOpen ?? localOpen;
+  const setOpen = (next: boolean) => { setLocalOpen(next); onOpenChange?.(next); };
   const addSessionMutation = useAddSession(exerciseId);
   const addSupersetMutation = useAddSupersetSession();
   const [exercises, setExercises] = useState<ExerciseWithSessions[]>([]);
@@ -86,13 +100,18 @@ export function AddSessionDialog({
   const form = useForm<SessionFormValues>({
     resolver: zodResolver(sessionSchema),
     defaultValues: {
-      date: new Date().toISOString().split("T")[0],
+      date: todayLocal(),
       sets: [{ reps: 10, weight: 0 }],
       isSuperSet: false,
       secondaryExerciseId: undefined,
       secondarySets: [{ reps: 10, weight: 0 }],
     },
   });
+
+  const secondaryIsBodyweight = !!selectedSecondaryExercise?.is_bodyweight;
+  const { history } = useProfile({ enabled: open && (isBodyweight || secondaryIsBodyweight), loadProfile: false });
+  const sessionDate = form.watch("date");
+  const bodyWeight = findBodyWeight(history.data ?? [], sessionDate);
 
   const isSuperSet = form.watch("isSuperSet");
   const primarySets = form.watch("sets") || [];
@@ -101,16 +120,18 @@ export function AddSessionDialog({
   const loading = addSessionMutation.isPending || addSupersetMutation.isPending;
   const unitLabel = getUnitLabel((unit || "weight") as UnitType);
 
-  const primaryScore = primarySets.reduce((sum, set) => sum + (set.reps * set.weight), 0);
+  const scoreSets = (sets: Array<{ reps?: number; weight?: number }>, bodyweight: boolean) =>
+    sets.reduce((sum, set) => sum + Number(set.reps || 0) * (Number(set.weight || 0) + (bodyweight ? bodyWeight ?? 0 : 0)), 0);
+  const primaryScore = Math.round(scoreSets(primarySets, isBodyweight));
   const secondaryScore = isSuperSet && selectedSecondaryExercise
-    ? Math.round(secondarySets.reduce((sum, set) => sum + (set.reps * set.weight), 0) * multiplier)
+    ? Math.round(scoreSets(secondarySets, secondaryIsBodyweight) * multiplier)
     : 0;
   const totalScore = primaryScore + secondaryScore;
 
   const resetFormAfterSave = (data: SessionFormValues) => {
     const lastSet = data.sets[data.sets.length - 1];
     form.reset({
-      date: new Date().toISOString().split("T")[0],
+      date: todayLocal(),
       sets: [{ reps: lastSet.reps, weight: lastSet.weight }],
       isSuperSet: false,
       secondaryExerciseId: undefined,
@@ -200,14 +221,27 @@ export function AddSessionDialog({
       onSessionAdded();
     };
 
-    if (data.isSuperSet && data.secondaryExerciseId && data.secondarySets?.length) {
+    let savedPrimarySets;
+    let savedSecondarySets: ReturnType<typeof materializeSets> = [];
+    try {
+      const weightAtDate = findBodyWeight(history.data ?? [], data.date);
+      savedPrimarySets = materializeSets(data.sets as Array<{ reps: number; weight: number }>, isBodyweight, weightAtDate);
+      if (data.isSuperSet && data.secondaryExerciseId && data.secondarySets?.length) {
+        savedSecondarySets = materializeSets(data.secondarySets as Array<{ reps: number; weight: number }>, secondaryIsBodyweight, weightAtDate);
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not prepare session load.");
+      return;
+    }
+
+    if (data.isSuperSet && data.secondaryExerciseId && savedSecondarySets?.length) {
       addSupersetMutation.mutate(
         {
           primaryExerciseId: exerciseId,
           secondaryExerciseId: data.secondaryExerciseId,
           date: data.date,
-          primarySets: data.sets as Array<{ reps: number; weight: number }>,
-          secondarySets: data.secondarySets as Array<{ reps: number; weight: number }>,
+          primarySets: savedPrimarySets,
+          secondarySets: savedSecondarySets,
           multiplier,
         },
         { onSuccess: resetForm }
@@ -216,7 +250,7 @@ export function AddSessionDialog({
       addSessionMutation.mutate(
         {
           date: data.date,
-          sets: data.sets as Array<{ reps: number; weight: number }>,
+          sets: savedPrimarySets,
         },
         { onSuccess: resetForm }
       );
@@ -232,33 +266,22 @@ export function AddSessionDialog({
   const renderSetsForm = (
     fieldPrefix: "sets" | "secondarySets",
     label: string,
-    addFn: () => void,
     removeFn: (index: number) => void,
     displayUnitLabel: string,
-    scrollRef: React.RefObject<HTMLDivElement>
+    scrollRef: React.RefObject<HTMLDivElement>,
+    bodyweight: boolean = false,
   ) => {
     const sets = form.watch(fieldPrefix) || [];
     const totalReps = sets.reduce((sum, set) => sum + (Number(set.reps) || 0), 0);
     return (
       <div className="space-y-3">
+        {bodyweight && <BodyweightSummary weight={bodyWeight} loading={history.isLoading} />}
         <div className="flex items-center justify-between">
           <div>
             <FormLabel>{label} ({sets.length})</FormLabel>
             <p className="text-xs text-muted-foreground">{totalReps.toLocaleString()} total reps</p>
           </div>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            onClick={(event) => {
-              event.currentTarget.blur();
-              addFn();
-            }}
-            className="active:scale-95 transition-transform"
-          >
-            <Plus className="h-4 w-4 mr-1" />
-            Add Set
-          </Button>
+
         </div>
 
         <div ref={scrollRef} className="max-h-[30vh] overflow-y-auto space-y-2 sets-scrollbar pr-1">
@@ -275,7 +298,7 @@ export function AddSessionDialog({
                     <FormItem>
                       {index === 0 && <FormLabel className="text-xs">Reps</FormLabel>}
                       <FormControl>
-                        <Input type="number" min="1" {...field} />
+                        <Input type="number" inputMode="numeric" aria-label={`Set ${index + 1} repetitions`} min="1" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -286,11 +309,12 @@ export function AddSessionDialog({
                   name={`${fieldPrefix}.${index}.weight`}
                   render={({ field }) => (
                     <FormItem>
-                      {index === 0 && <FormLabel className="text-xs">{displayUnitLabel}</FormLabel>}
+                      {index === 0 && <FormLabel className="text-xs">{bodyweight ? "Added weight (kg)" : displayUnitLabel}</FormLabel>}
                       <FormControl>
-                        <Input type="number" min="0" step="0.5" {...field} />
+                        <Input type="number" inputMode="decimal" aria-label={`Set ${index + 1} ${bodyweight ? "added weight" : "load"}`} min="0" step="0.5" {...field} />
                       </FormControl>
                       <FormMessage />
+                      {bodyweight && bodyWeight !== null && <p className="text-xs text-muted-foreground">{bodyWeight} + {Number(field.value) || 0} = {Math.round((bodyWeight + Number(field.value || 0)) * 100) / 100} kg</p>}
                     </FormItem>
                   )}
                 />
@@ -300,6 +324,7 @@ export function AddSessionDialog({
                   type="button"
                   size="icon"
                   variant="ghost"
+                  aria-label={`Remove set ${index + 1}`}
                   onClick={() => removeFn(index)}
                   className={index === 0 ? "mt-6" : ""}
                 >
@@ -315,7 +340,7 @@ export function AddSessionDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
+      {!hideTrigger && <DialogTrigger asChild>
         <Button
           size="lg"
           className="fixed bottom-6 left-6 h-[72px] w-[72px] rounded-full shadow-lg z-50 hover:scale-110 transition-transform"
@@ -323,7 +348,7 @@ export function AddSessionDialog({
         >
           <Plus className="h-8 w-8" />
         </Button>
-      </DialogTrigger>
+      </DialogTrigger>}
       <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Log New Session</DialogTitle>
@@ -333,7 +358,7 @@ export function AddSessionDialog({
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col h-full relative">
-            <div className="flex-1 space-y-4 overflow-y-auto sets-scrollbar pr-1 pb-32">
+            <div className="flex-1 space-y-4 overflow-y-auto sets-scrollbar pr-1 pb-5">
               <FormField
                 control={form.control}
                 name="date"
@@ -358,7 +383,7 @@ export function AddSessionDialog({
                   <p className="text-sm font-medium text-foreground">{exerciseName}</p>
                   <span className="text-sm font-semibold text-primary">{primaryScore.toLocaleString()} pts</span>
                 </div>
-                {renderSetsForm("sets", "Sets", addSet, removeSet, unitLabel, primarySetsRef)}
+                {renderSetsForm("sets", "Sets", removeSet, unitLabel, primarySetsRef, isBodyweight)}
               </div>
 
               <div className="flex items-center justify-between p-3 rounded-lg bg-accent/10 border border-accent/20">
@@ -446,14 +471,22 @@ export function AddSessionDialog({
                           </Button>
                         </div>
                       </div>
-                      {renderSetsForm("secondarySets", "Sets", addSecondarySet, removeSecondarySet, getUnitLabel((selectedSecondaryExercise.unit || "weight") as UnitType), secondarySetsRef)}
+                      {renderSetsForm("secondarySets", "Sets", removeSecondarySet, getUnitLabel((selectedSecondaryExercise.unit || "weight") as UnitType), secondarySetsRef, secondaryIsBodyweight)}
                     </div>
                   )}
                 </div>
               )}
             </div>
 
-            <div className="fixed bottom-0 left-0 right-0 px-4 pt-4 pb-16 bg-background">
+            <div className="sticky bottom-0 space-y-2 border-t border-border bg-background pt-4 pb-[env(safe-area-inset-bottom)]">
+              <Button type="button" size="lg" disabled={loading} onClick={(event) => { event.currentTarget.blur(); addSet(); }}
+                className="h-14 w-full rounded-xl bg-accent text-base font-semibold text-accent-foreground hover:bg-accent/90 focus-visible:ring-accent active:scale-[0.98]">
+                <Plus className="h-5 w-5" /> {isSuperSet && selectedSecondaryExercise ? `Add Set · ${exerciseName}` : "Add Set"}
+              </Button>
+              {isSuperSet && selectedSecondaryExercise && <Button type="button" size="lg" disabled={loading} onClick={(event) => { event.currentTarget.blur(); addSecondarySet(); }}
+                className="h-14 w-full rounded-xl bg-accent text-base font-semibold text-accent-foreground hover:bg-accent/90 focus-visible:ring-accent active:scale-[0.98]">
+                <Plus className="h-5 w-5" /> Add Set · {selectedSecondaryExercise.name}
+              </Button>}
               <Button
                 type="submit"
                 className="w-full"

@@ -29,10 +29,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
-import { useQueryClient } from "@tanstack/react-query";
-import { ExerciseWithSessions } from "@/lib/supabaseStore";
-import { getCachedExercises, setCachedExercises, addToSyncQueue } from "@/lib/localCache";
-import { EXERCISES_QUERY_KEY } from "@/hooks/useExercises";
+import { addToSyncQueue } from "@/lib/localCache";
+import { useAuth } from "@/hooks/useAuth";
 
 const exerciseSchema = z.object({
   name: z
@@ -49,11 +47,16 @@ type ExerciseFormValues = z.infer<typeof exerciseSchema>;
 
 interface AddExerciseDialogProps {
   onExerciseAdded: () => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  hideTrigger?: boolean;
 }
 
-export function AddExerciseDialog({ onExerciseAdded }: AddExerciseDialogProps) {
-  const [open, setOpen] = useState(false);
-  const queryClient = useQueryClient();
+export function AddExerciseDialog({ onExerciseAdded, open: controlledOpen, onOpenChange, hideTrigger = false }: AddExerciseDialogProps) {
+  const { userId } = useAuth();
+  const [localOpen, setLocalOpen] = useState(false);
+  const open = controlledOpen ?? localOpen;
+  const setOpen = (next: boolean) => { setLocalOpen(next); onOpenChange?.(next); };
 
   const form = useForm<ExerciseFormValues>({
     resolver: zodResolver(exerciseSchema),
@@ -63,41 +66,17 @@ export function AddExerciseDialog({ onExerciseAdded }: AddExerciseDialogProps) {
     },
   });
 
-  const onSubmit = (data: ExerciseFormValues) => {
-    const tempId = `temp-ex-${Date.now()}`;
-    const newExercise: ExerciseWithSessions = {
-      id: tempId,
-      name: data.name,
-      category: data.category,
-      user_id: 'local',
-      created_at: new Date().toISOString(),
-      description: null,
-      image_url: null,
-      personal_records: null,
-      superset_multiplier: 1.2,
-      unit: 'weight',
-      sessions: [],
-    };
-
-    // Update react-query cache
-    queryClient.setQueryData<ExerciseWithSessions[]>(EXERCISES_QUERY_KEY, (old) =>
-      [newExercise, ...(old || [])]
-    );
-    // Update localStorage cache
-    const cache = getCachedExercises();
-    setCachedExercises([newExercise, ...(cache || [])]);
-    // Queue for background DB sync
-    addToSyncQueue({ type: 'add_exercise', payload: { name: data.name, category: data.category, tempId } });
-
-    toast.success(`${data.name} has been added to ${data.category}.`);
-    form.reset();
-    setOpen(false);
-    onExerciseAdded();
+  const onSubmit = async (data: ExerciseFormValues) => {
+    try {
+      await addToSyncQueue({ type: "add_exercise", payload: { ...data, tempId: crypto.randomUUID() } }, userId);
+      toast.success("Exercise saved on this device. Synchronization pending.");
+      form.reset(); setOpen(false); onExerciseAdded();
+    } catch { toast.error("Could not save the exercise on this device. Please retry."); }
   };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
+      {!hideTrigger && <DialogTrigger asChild>
         <Button
           size="lg"
           className="fixed bottom-6 left-6 h-[72px] w-[72px] rounded-full shadow-lg z-50 hover:scale-110 transition-transform"
@@ -105,7 +84,7 @@ export function AddExerciseDialog({ onExerciseAdded }: AddExerciseDialogProps) {
         >
           <Plus className="h-8 w-8" />
         </Button>
-      </DialogTrigger>
+      </DialogTrigger>}
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Add New Exercise</DialogTitle>
@@ -162,7 +141,7 @@ export function AddExerciseDialog({ onExerciseAdded }: AddExerciseDialogProps) {
               >
                 Cancel
               </Button>
-              <Button type="submit" className="flex-1">
+              <Button type="submit" disabled={form.formState.isSubmitting} className="flex-1">
                 Add Exercise
               </Button>
             </div>

@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import { ExerciseWithSessions } from "@/lib/supabaseStore";
 import { ExerciseCard } from "./ExerciseCard";
 import { Category, categoryConfig } from "@/lib/categoryIcons";
@@ -9,6 +11,7 @@ interface CategorySectionProps {
 }
 
 export function CategorySection({ category, exercises, onExerciseDeleted }: CategorySectionProps) {
+  const [visible, setVisible] = useState(30);
   const config = categoryConfig[category];
   const Icon = config.icon;
 
@@ -22,10 +25,11 @@ export function CategorySection({ category, exercises, onExerciseDeleted }: Cate
         <span className="text-sm text-muted-foreground">({exercises.length})</span>
       </div>
       <div className="grid gap-3">
-        {exercises.map((exercise) => (
+        {exercises.slice(0, visible).map((exercise) => (
           <ExerciseCard key={exercise.id} exercise={exercise} onDeleted={onExerciseDeleted} />
         ))}
       </div>
+      {exercises.length > visible && <Button variant="outline" onClick={() => setVisible((count) => count + 30)}>Load more exercises</Button>}
     </div>
   );
 }

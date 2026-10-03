@@ -1,7 +1,10 @@
-import { useState, useCallback } from "react";
+import { isCalendarDate } from "@/lib/validation";
+import { ExerciseNavigation } from "@/components/ExerciseNavigation";
+import { getSessionSets, isBodyweightSession } from "@/lib/bodyweight";
+import { useState, useCallback, lazy, Suspense } from "react";
 import { processQueue } from "@/lib/localCache";
 import { format } from "date-fns";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useExercise, useInvalidateExercises } from "@/hooks/useExercises";
 import { useDeleteSession } from "@/hooks/useSessionMutations";
 import { Button } from "@/components/ui/button";
@@ -16,14 +19,15 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
-import { AddSessionDialog } from "@/components/AddSessionDialog";
-import { EditSessionDialog } from "@/components/EditSessionDialog";
-import { EditExerciseDetailsDialog } from "@/components/EditExerciseDetailsDialog";
-import { ArrowLeft, Calendar, TrendingUp, Trash2, Edit, Image, Zap, Trophy } from "lucide-react";
+const AddSessionDialog = lazy(() => import("@/components/AddSessionDialog").then((module) => ({ default: module.AddSessionDialog })));
+const EditSessionDialog = lazy(() => import("@/components/EditSessionDialog").then((module) => ({ default: module.EditSessionDialog })));
+const EditExerciseDetailsDialog = lazy(() => import("@/components/EditExerciseDetailsDialog").then((module) => ({ default: module.EditExerciseDetailsDialog })));
+import { ArrowLeft, Calendar, TrendingUp, Trash2, Image, Zap, Trophy } from "lucide-react";
 import { getCategoryConfig } from "@/lib/categoryIcons";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+const ExerciseChart = lazy(() => import("@/components/ExerciseChart"));
+import { QueryError } from "@/components/QueryError";
 import { Database } from "@/integrations/supabase/types";
 
 type Session = Database["public"]["Tables"]["sessions"]["Row"];
@@ -32,10 +36,14 @@ export default function ExerciseDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [editingSession, setEditingSession] = useState<Session | null>(null);
-  const [editingDetails, setEditingDetails] = useState(false);
-  const [activeTab, setActiveTab] = useState("details");
+  const [visibleSessions, setVisibleSessions] = useState(30);
+  const [addSessionOpen, setAddSessionOpen] = useState(false);
+  const [params, setParams] = useSearchParams();
+  const section = params.get("section");
+  const activeTab = ["details", "sessions", "statistics", "settings"].includes(section ?? "") ? section! : "details";
+  const setActiveTab = (value: string) => setParams({ section: value });
 
-  const { data: exercise, isLoading: loading } = useExercise(id);
+  const { data: exercise, isLoading: loading, isError, isPlaceholderData, hasCompleteHistory, refetch } = useExercise(id);
   const { invalidateOne } = useInvalidateExercises();
   const deleteSessionMutation = useDeleteSession(id || "");
 
@@ -55,6 +63,8 @@ export default function ExerciseDetail() {
     );
   }
 
+  if (isError && !exercise) return <div className="p-8"><QueryError onRetry={() => void refetch()} /></div>;
+
   if (!exercise) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -66,21 +76,18 @@ export default function ExerciseDetail() {
     );
   }
 
-  const chartData = exercise.sessions.map((session) => ({
-    date: new Date(session.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-    value: session.value,
-  }));
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="floating-page min-h-screen bg-background">
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border/50">
         <div className="container max-w-2xl mx-auto px-4 py-4">
           <div className="flex items-center gap-3">
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => { processQueue(); navigate("/"); }}
+              onClick={() => { void processQueue().catch(() => {}); navigate("/"); }}
               className="hover:bg-secondary"
+              aria-label="Back to exercises"
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>
@@ -90,60 +97,39 @@ export default function ExerciseDetail() {
               return <CategoryIcon className={`h-6 w-6 ${categoryInfo.color}`} />;
             })()}
             <h1 className="text-2xl font-bold text-foreground flex-1">{exercise.name}</h1>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setEditingDetails(true)}
-              className="hover:bg-secondary"
-            >
-              <Edit className="h-5 w-5" />
-            </Button>
+
           </div>
         </div>
       </div>
 
-      <AddSessionDialog
+      {addSessionOpen && <Suspense fallback={<p role="status">Loading session editor…</p>}><AddSessionDialog
         exerciseId={exercise.id}
         exerciseName={exercise.name}
         unit={exercise.unit}
+        isBodyweight={exercise.is_bodyweight}
         supersetMultiplier={exercise.superset_multiplier}
         onSessionAdded={handleSessionAdded}
-      />
+        open={addSessionOpen}
+        onOpenChange={setAddSessionOpen}
+        hideTrigger
+      /></Suspense>}
 
       {editingSession && (
-        <EditSessionDialog
+        <Suspense fallback={<p role="status">Loading session editor…</p>}><EditSessionDialog
           session={editingSession}
           exerciseName={exercise.name}
           unit={exercise.unit}
           supersetMultiplier={exercise.superset_multiplier}
           open={!!editingSession}
           onOpenChange={(open) => !open && setEditingSession(null)}
-        />
+        /></Suspense>
       )}
 
-      <EditExerciseDetailsDialog
-        exerciseId={exercise.id}
-        currentName={exercise.name}
-        currentImageUrl={exercise.image_url}
-        currentDescription={exercise.description}
-        currentUnit={exercise.unit}
-        currentSupersetMultiplier={exercise.superset_multiplier}
-        currentPersonalRecords={exercise.personal_records as Array<{ text: string; date: string }> | null}
-        open={editingDetails}
-        onOpenChange={setEditingDetails}
-        onDetailsUpdated={() => id && invalidateOne(id)}
-      />
 
       <div className="container max-w-2xl mx-auto px-4 py-6">
+        {isError && <QueryError onRetry={() => void refetch()} />}
+        {!hasCompleteHistory && <p role="status">Only locally available sessions are shown until the full history loads.</p>}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <div className="sticky top-[57px] z-10 bg-background/95 backdrop-blur-sm pb-4 -mx-4 px-4">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="details">Details</TabsTrigger>
-              <TabsTrigger value="sessions">Sessions</TabsTrigger>
-              <TabsTrigger value="statistics">Statistics</TabsTrigger>
-            </TabsList>
-          </div>
-
           <TabsContent value="details">
             <div className="flex flex-col">
               {exercise.image_url ? (
@@ -172,7 +158,8 @@ export default function ExerciseDetail() {
 
               {/* Personal Records Section */}
               {(() => {
-                const prs = exercise.personal_records as Array<{ text: string; date: string }> | null;
+                const prs = Array.isArray(exercise.personal_records) ? (exercise.personal_records as Array<{ text?: string; date?: string }>)
+                  .filter((record): record is { text: string; date: string } => !!record && typeof record.text === "string" && typeof record.date === "string") : [];
                 return (
                   <div className="w-full mt-6">
                     <div className="flex items-center gap-2 mb-3">
@@ -191,7 +178,7 @@ export default function ExerciseDetail() {
                               <span className="font-medium text-foreground">{pr.text}</span>
                             </div>
                             <span className="text-sm text-muted-foreground">
-                              {format(new Date(pr.date), "dd/MM/yyyy")}
+                              {isCalendarDate(pr.date) ? format(new Date(`${pr.date}T12:00:00`), "dd/MM/yyyy") : "Date unavailable"}
                             </span>
                           </div>
                         ))}
@@ -209,6 +196,7 @@ export default function ExerciseDetail() {
             {exercise.sessions
               .slice()
               .reverse()
+              .slice(0, visibleSessions)
               .map((session) => (
                 <Card 
                   key={session.id} 
@@ -221,10 +209,11 @@ export default function ExerciseDetail() {
                       <div className="flex items-center gap-2 mb-2">
                         <Calendar className="h-4 w-4 text-primary" />
                         <span className="font-medium text-foreground">
-                          {format(new Date(session.date), "dd-MM-yyyy")}
+                          {format(new Date(`${session.date}T12:00:00`), "dd-MM-yyyy")}
                         </span>
                       </div>
                       <div className="space-y-1 text-sm text-muted-foreground">
+                        {isBodyweightSession(session) && <p className="text-primary">Body weight: {getSessionSets(session)[0].body_weight} kg · Added load per set</p>}
                         <p>Series: {session.series}</p>
                         <p>Reps: {session.reps}</p>
                         <p>
@@ -271,59 +260,33 @@ export default function ExerciseDetail() {
                   {session.superset_id && (
                     <span className="absolute bottom-2 right-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-accent/20 text-accent">
                       <Zap className="h-3 w-3" />
-                      Super Set {session.is_superset_secondary && `(${exercise.superset_multiplier || 1.2}x)`}
+                      Super Set {session.is_superset_secondary && `(${session.value_multiplier ?? exercise.superset_multiplier ?? 1.2}x)`}
                     </span>
                   )}
                 </Card>
               ))}
+              {exercise.sessions.length > visibleSessions && <Button variant="outline" onClick={() => setVisibleSessions((value) => value + 30)}>Load more sessions</Button>}
           </TabsContent>
 
           <TabsContent value="statistics">
+            {hasCompleteHistory ? <>
             <Card className="p-6 border-border/50" style={{ boxShadow: 'var(--shadow-elevated)' }}>
               <div className="flex items-center gap-2 mb-6">
                 <TrendingUp className="h-5 w-5 text-accent" />
                 <h3 className="text-lg font-semibold text-foreground">Progress Over Time</h3>
               </div>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis 
-                    dataKey="date" 
-                    stroke="hsl(var(--muted-foreground))"
-                    style={{ fontSize: '12px' }}
-                  />
-                  <YAxis 
-                    stroke="hsl(var(--muted-foreground))"
-                    style={{ fontSize: '12px' }}
-                  />
-                  <Tooltip 
-                    contentStyle={{
-                      backgroundColor: 'hsl(var(--card))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px',
-                    }}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="value" 
-                    stroke="hsl(var(--primary))" 
-                    strokeWidth={3}
-                    dot={{ fill: 'hsl(var(--primary))', r: 5 }}
-                    activeDot={{ r: 7 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+              {activeTab === "statistics" && <Suspense fallback={<p>Loading chart…</p>}><ExerciseChart sessions={exercise.sessions} /></Suspense>}
               <div className="mt-6 grid grid-cols-3 gap-4">
                 <div className="text-center">
                   <div className="text-sm text-muted-foreground mb-1">Best</div>
                   <div className="text-xl font-bold text-accent">
-                    {Math.max(...exercise.sessions.map(s => s.value))}
+                    {exercise.sessions.length ? exercise.sessions.reduce((best, session) => Math.max(best, session.value), 0) : 0}
                   </div>
                 </div>
                 <div className="text-center">
                   <div className="text-sm text-muted-foreground mb-1">Average</div>
                   <div className="text-xl font-bold text-primary">
-                    {Math.round(exercise.sessions.reduce((sum, s) => sum + s.value, 0) / exercise.sessions.length)}
+                    {exercise.sessions.length ? Math.round(exercise.sessions.reduce((sum, s) => sum + s.value, 0) / exercise.sessions.length) : 0}
                   </div>
                 </div>
                 <div className="text-center">
@@ -334,7 +297,25 @@ export default function ExerciseDetail() {
                 </div>
               </div>
             </Card>
+            </> : <p>Statistics require the complete session history. Connect to load it.</p>}
           </TabsContent>
+          <TabsContent value="settings">
+            {activeTab === "settings" && <Suspense fallback={<p>Loading settings…</p>}><EditExerciseDetailsDialog
+              exerciseId={exercise.id}
+              currentName={exercise.name}
+              currentImageUrl={exercise.image_url}
+              currentDescription={exercise.description}
+              currentUnit={exercise.unit}
+              currentIsBodyweight={exercise.is_bodyweight}
+              currentSupersetMultiplier={exercise.superset_multiplier}
+              currentPersonalRecords={exercise.personal_records as Array<{ text: string; date: string }> | null}
+              inline
+              open={activeTab === "settings"}
+              onOpenChange={() => {}}
+              onDetailsUpdated={() => id && invalidateOne(id)}
+            /></Suspense>}
+          </TabsContent>
+          <ExerciseNavigation onAddSession={() => setAddSessionOpen(true)} />
         </Tabs>
       </div>
     </div>

@@ -1,73 +1,59 @@
-# Welcome to your Lovable project
+# GymTrack
 
-## Project info
+Applicazione per esercizi, sessioni, superset e misurazioni corporee. Frontend React 18, TypeScript, Vite e Tailwind; autenticazione, PostgreSQL e immagini tramite Lovable Cloud/Supabase.
 
-**URL**: https://lovable.dev/projects/2575cd2b-6216-4af0-9f5c-714794b02fc8
+[Progetto Lovable](https://lovable.dev/projects/2575cd2b-6216-4af0-9f5c-714794b02fc8).
 
-## How can I edit this code?
+## Sviluppo
 
-There are several ways of editing your application.
-
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/2575cd2b-6216-4af0-9f5c-714794b02fc8) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+Usare Node.js 24 e npm 11. `package-lock.json` è il lockfile di riferimento.
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+npm ci
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+Il server ascolta su `127.0.0.1`. Configurare `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY` nell'ambiente locale/hosting. La chiave frontend deve essere quella pubblicabile, mai una chiave amministrativa.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Verifiche
 
-**Use GitHub Codespaces**
+```sh
+npm run lint
+npm test
+npm run build
+npm audit --audit-level=moderate
+npm run bundle:stats
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+La build include il typecheck strict. I test eseguono la coda reale su IndexedDB simulato, gli hook React Query e tutte le migrazioni su PostgreSQL tramite PGlite. I servizi HTTP e il sistema Storage di produzione non sono emulati integralmente.
 
-## What technologies are used for this project?
+`bundle:stats` richiede una build precedente e somma i moduli JavaScript necessari all'avvio di ogni schermata, comprese le dipendenze statiche condivise. Le dipendenze caricate successivamente con import dinamici sono escluse. La CI usa Node 24 e verifica installazione, lint, test, build e audit.
 
-This project is built with:
+## Database e rilascio
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+Applicare le migrazioni prima di pubblicare questo frontend. Il database ospitato si gestisce nel progetto Lovable, **Cloud → SQL editor**. La migrazione profilo/peso `20261002223000` è documentata in [docs/bodyweight.md](docs/bodyweight.md).
 
-## How can I deploy this project?
+Per le correzioni del 3 ottobre 2026, eseguire in ordine:
 
-Simply open [Lovable](https://lovable.dev/projects/2575cd2b-6216-4af0-9f5c-714794b02fc8) and click on Share -> Publish.
+1. [20261003000000_security_sync_performance.sql](supabase/migrations/20261003000000_security_sync_performance.sql).
+2. [20261003001000_overview_rpc_permissions.sql](supabase/migrations/20261003001000_overview_rpc_permissions.sql).
+3. [verify_security_sync_performance.sql](supabase/verify_security_sync_performance.sql): tutti i 13 controlli devono essere `true`; controllare anche le policy Storage elencate.
+4. Solo per SQL eseguito manualmente, [register_security_sync_performance.sql](supabase/register_security_sync_performance.sql) registra entrambe le versioni nello storico senza applicarle nuovamente. Con `supabase db push` la registrazione è automatica.
 
-## Can I connect a custom domain to my Lovable project?
+Il primo file è transazionale e conserva i valori delle sessioni precedenti. I vincoli `NOT VALID` controllano le nuove scritture senza modificare automaticamente eventuali dati storici irregolari. Non rieseguire il primo file se le modifiche risultano già applicate.
 
-Yes, you can!
+## Dati offline e account
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+Ogni account ha una coda IndexedDB separata. Le operazioni sono persistite prima di mostrare il salvataggio locale; gli errori restano recuperabili. UUID stabili evitano duplicati nei retry e il coordinamento tra schede evita invii concorrenti. I superset vengono inseriti con una singola richiesta atomica.
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Cache e query sono separate per account. Al cambio utente le richieste precedenti vengono annullate, la cache in memoria viene svuotata e lo stato dei form viene azzerato. Ogni salvataggio richiede il proprietario catturato dal form. Le modifiche pendenti rimangono disponibili quando torna il relativo account. Il banner permette retry ed esportazione delle sole operazioni dell'account corrente.
+
+Le vecchie chiavi globali sono conservate ma escluse da lettura, sincronizzazione ed esportazione nell'app: mancava il proprietario, quindi il recupero richiede una verifica separata dell'account di origine. Vedere [il report delle correzioni](docs/correzioni-prestazioni-sicurezza-2026-10-03.md) per dettagli e limiti.
+
+Le immagini degli esercizi mantengono la lettura pubblica. Le scritture sono riservate al proprietario; i nuovi upload usano percorsi per utente, WebP ridimensionati e miniature. Le pulizie pendenti verificano i riferimenti sul server prima di eliminare file.
+
+## Documentazione
+
+- [Analisi iniziale del 2 ottobre](docs/analisi-prestazioni-sicurezza-2026-10-02.md).
+- [Correzioni e verifiche del 3 ottobre](docs/correzioni-prestazioni-sicurezza-2026-10-03.md).
+- [Profili e sessioni a corpo libero](docs/bodyweight.md).

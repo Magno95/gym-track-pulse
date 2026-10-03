@@ -19,7 +19,7 @@ export function SessionStatistics({ sessions }: SessionStatisticsProps) {
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
       .slice(-10) // Last 10 sessions
       .map((session) => ({
-        date: format(new Date(session.date), "dd/MM", { locale: it }),
+        date: format(new Date(`${session.date}T12:00:00`), "dd/MM", { locale: it }),
         punteggio: session.totalValue,
       }));
   }, [sessions]);
@@ -28,7 +28,6 @@ export function SessionStatistics({ sessions }: SessionStatisticsProps) {
   const frequencyData = useMemo(() => {
     if (sessions.length === 0) return [];
 
-    const dates = sessions.map(s => new Date(s.date));
     const minDate = subWeeks(new Date(), 7); // Last 8 weeks
     const maxDate = new Date();
 
@@ -40,7 +39,7 @@ export function SessionStatistics({ sessions }: SessionStatisticsProps) {
     return weeks.map((weekStart) => {
       const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
       const sessionsInWeek = sessions.filter((session) => {
-        const sessionDate = new Date(session.date);
+        const sessionDate = new Date(`${session.date}T12:00:00`);
         return sessionDate >= weekStart && sessionDate <= weekEnd;
       }).length;
 
@@ -58,7 +57,7 @@ export function SessionStatistics({ sessions }: SessionStatisticsProps) {
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
       .slice(-10) // Last 10 sessions
       .map((session) => ({
-        date: format(new Date(session.date), "dd/MM", { locale: it }),
+        date: format(new Date(`${session.date}T12:00:00`), "dd/MM", { locale: it }),
         esercizi: session.exercises.length,
       }));
   }, [sessions]);

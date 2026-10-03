@@ -1,3 +1,4 @@
+import { thumbnailUrl } from "@/lib/exerciseImages";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,9 +18,7 @@ import { ExerciseWithSessions } from "@/lib/supabaseStore";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
-import { getCachedExercises, setCachedExercises, addToSyncQueue } from "@/lib/localCache";
-import { EXERCISES_QUERY_KEY } from "@/hooks/useExercises";
+import { addToSyncQueue } from "@/lib/localCache";
 
 interface ExerciseCardProps {
   exercise: ExerciseWithSessions;
@@ -38,31 +37,23 @@ const getUnitSuffix = (unit?: string | null) => {
 export function ExerciseCard({ exercise, onDeleted }: ExerciseCardProps) {
   const navigate = useNavigate();
   const [deleting, setDeleting] = useState(false);
-  const queryClient = useQueryClient();
   const latestSession = exercise.sessions[exercise.sessions.length - 1];
   const previousSession = exercise.sessions[exercise.sessions.length - 2];
   
   const categoryInfo = getCategoryConfig(exercise.category);
   const CategoryIcon = categoryInfo.icon;
   
-  const improvement = previousSession 
+  const improvement = previousSession && previousSession.value > 0 && latestSession
     ? ((latestSession.value - previousSession.value) / previousSession.value * 100).toFixed(1)
     : null;
 
-  const handleDelete = () => {
-    // Update react-query cache
-    queryClient.setQueryData<ExerciseWithSessions[]>(EXERCISES_QUERY_KEY, (old) =>
-      old?.filter(e => e.id !== exercise.id) || []
-    );
-    // Update localStorage cache
-    const cache = getCachedExercises();
-    if (cache) {
-      setCachedExercises(cache.filter(e => e.id !== exercise.id));
-    }
-    // Queue for background DB sync
-    addToSyncQueue({ type: 'delete_exercise', payload: { exerciseId: exercise.id } });
-    toast.success("Exercise deleted");
-    onDeleted();
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      await addToSyncQueue({ type: "delete_exercise", payload: { exerciseId: exercise.id, imageUrl: exercise.image_url ?? undefined } }, exercise.user_id);
+      toast.success("Deletion saved on this device. Synchronization pending."); onDeleted();
+    } catch { toast.error("Could not save the deletion. Please retry."); }
+    finally { setDeleting(false); }
   };
 
   return (
@@ -78,10 +69,12 @@ export function ExerciseCard({ exercise, onDeleted }: ExerciseCardProps) {
         >
           {exercise.image_url ? (
             <img 
-              src={exercise.image_url} 
+              loading="lazy" decoding="async"
+              src={thumbnailUrl(exercise.image_url)}
               alt={exercise.name}
               className="w-full h-full object-cover rounded-l-xl block"
               onError={(e) => {
+                if (e.currentTarget.src !== exercise.image_url) { e.currentTarget.src = exercise.image_url!; return; }
                 e.currentTarget.style.display = 'none';
                 e.currentTarget.nextElementSibling?.classList.remove('hidden');
               }}
@@ -98,6 +91,7 @@ export function ExerciseCard({ exercise, onDeleted }: ExerciseCardProps) {
             <h3 className="font-semibold text-base text-foreground mb-1">
               {exercise.name}
             </h3>
+            {exercise.is_bodyweight && <p className="mb-1 text-xs font-medium text-primary">Bodyweight + added load</p>}
             {latestSession && (
               <div className="text-sm text-muted-foreground space-y-0.5">
                 <p className="text-xs">Last: {latestSession.series}×{latestSession.reps} @ {latestSession.weight}{getUnitSuffix(exercise.unit)}</p>

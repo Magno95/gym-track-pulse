@@ -14,12 +14,25 @@ export type Database = {
   }
   public: {
     Tables: {
+      profiles: {
+        Row: { user_id: string; height_cm: number | null }
+        Insert: { user_id: string; height_cm?: number | null }
+        Update: { user_id?: string; height_cm?: number | null }
+        Relationships: []
+      }
+      body_weight_history: {
+        Row: { id: string; user_id: string; effective_date: string; weight_kg: number; created_at: string }
+        Insert: { id?: string; user_id: string; effective_date: string; weight_kg: number; created_at?: string }
+        Update: { id?: string; user_id?: string; effective_date?: string; weight_kg?: number; created_at?: string }
+        Relationships: []
+      }
       exercises: {
         Row: {
           category: string
           created_at: string
           description: string | null
           id: string
+          is_bodyweight: boolean
           image_url: string | null
           name: string
           personal_records: Json | null
@@ -32,6 +45,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          is_bodyweight?: boolean
           image_url?: string | null
           name: string
           personal_records?: Json | null
@@ -44,6 +58,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          is_bodyweight?: boolean
           image_url?: string | null
           name?: string
           personal_records?: Json | null
@@ -64,10 +79,12 @@ export type Database = {
           series: number
           sets: Json | null
           superset_id: string | null
+          value_multiplier: number
           value: number
           weight: number
         }
         Insert: {
+          value_multiplier?: number
           created_at?: string
           date: string
           exercise_id: string
@@ -90,6 +107,7 @@ export type Database = {
           series?: number
           sets?: Json | null
           superset_id?: string | null
+          value_multiplier?: number
           value?: number
           weight?: number
         }
@@ -108,7 +126,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_exercise_overview: {
+        Args: { p_user_id: string }
+        Returns: { exercise: Json; sessions: Json }[]
+      }
     }
     Enums: {
       [_ in never]: never

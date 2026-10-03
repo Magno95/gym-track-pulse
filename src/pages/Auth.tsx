@@ -1,3 +1,4 @@
+import { useAuth } from "@/hooks/useAuth";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dumbbell } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
-import gymTrackLogo from "@/assets/gym-track-logo.jpg";
+import gymTrackLogo from "@/assets/gym-track-logo-small.jpg";
 
 const authSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -22,21 +23,8 @@ const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        navigate("/");
-      }
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session) {
-        navigate("/");
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [navigate]);
+  const { userId } = useAuth();
+  useEffect(() => { if (userId) navigate("/", { replace: true }); }, [userId, navigate]);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -103,7 +91,7 @@ const Auth = () => {
             <div className="h-24 w-24 rounded-full  from-primary to-accent flex items-center justify-center">
                <img 
               src={gymTrackLogo} 
-              alt="GymTrack Logo" 
+              width={144} height={144} alt="GymTrack Logo"
               className="h-36 w-36 rounded-full object-cover"
             />
             </div>

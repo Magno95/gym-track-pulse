@@ -164,3 +164,47 @@ All colors MUST be HSL.
     margin: 0;
   }
 }
+
+/* Keep content and controls above the floating bar and the device home indicator. */
+.floating-page {
+  padding-bottom: calc(8rem + env(safe-area-inset-bottom, 0px));
+}
+
+.floating-navigation {
+  position: fixed;
+  bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 40;
+  display: flex;
+  height: auto;
+  align-items: center;
+  width: min(calc(100% - 2rem), 25rem);
+  padding: 0.75rem;
+  border: 1px solid hsl(var(--border) / 0.8);
+  border-radius: 9999px;
+  background: hsl(var(--card));
+  box-shadow: 0 8px 32px hsl(var(--primary) / 0.14);
+}
+
+.quick-add-option {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  min-height: 3rem;
+  padding: 0.875rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: 1rem;
+  text-align: left;
+  transition: background-color 160ms ease-out;
+}
+
+.quick-add-option:hover { background: hsl(var(--muted)); }
+.quick-add-option:focus-visible { outline: 2px solid hsl(var(--primary)); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .quick-add-option { transition: none; }
+}
+
+.exercise-navigation { width: min(calc(100% - 2rem), 30rem); }

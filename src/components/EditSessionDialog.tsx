@@ -1,3 +1,6 @@
+import { useProfile } from "@/hooks/useProfile";
+import { bodyWeightForEdit, getEditableSets, isBodyweightSession, materializeSets } from "@/lib/bodyweight";
+import { BodyweightSummary } from "@/components/BodyweightSummary";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -74,6 +77,8 @@ export function EditSessionDialog({
   onOpenChange,
 }: EditSessionDialogProps) {
   const { mutateAsync: updateSession, isPending } = useUpdateSession(session.exercise_id);
+  const isBodyweight = isBodyweightSession(session);
+  const { history } = useProfile({ enabled: open && isBodyweight, loadProfile: false });
   const [closeLoading, setCloseLoading] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"saved" | "pending" | "saving" | "invalid" | "error">("saved");
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -84,19 +89,7 @@ export function EditSessionDialog({
   const pendingSaveRef = useRef(false);
   const setsRef = useRef<HTMLDivElement>(null);
 
-  const getInitialSets = useCallback(() => {
-    if (session.sets && Array.isArray(session.sets) && session.sets.length > 0) {
-      return (session.sets as Array<{ reps: number; weight: number }>).map((set) => ({
-        reps: set.reps,
-        weight: set.weight,
-      }));
-    }
-
-    return Array.from({ length: session.series }, () => ({
-      reps: session.reps,
-      weight: Number(session.weight),
-    }));
-  }, [session.reps, session.series, session.sets, session.weight]);
+  const getInitialSets = useCallback(() => getEditableSets(session), [session]);
 
   const form = useForm<SessionFormValues>({
     resolver: zodResolver(sessionSchema),
@@ -106,10 +99,12 @@ export function EditSessionDialog({
     },
   });
 
-  const valueMultiplier = session.is_superset_secondary ? (supersetMultiplier || 1.2) : 1;
+  const valueMultiplier = session.is_superset_secondary ? (session.value_multiplier ?? supersetMultiplier ?? 1.2) : 1;
+  const watchedDate = form.watch("date");
+  const bodyWeight = bodyWeightForEdit(session, watchedDate, history.data ?? []);
   const watchedSets = form.watch("sets") || [];
   const totalReps = watchedSets.reduce((sum, set) => sum + (Number(set.reps) || 0), 0);
-  const score = Math.round(watchedSets.reduce((sum, set) => sum + (set.reps * set.weight), 0) * valueMultiplier);
+  const score = Math.round(watchedSets.reduce((sum, set) => sum + Number(set.reps || 0) * (Number(set.weight || 0) + (isBodyweight ? bodyWeight ?? 0 : 0)), 0) * valueMultiplier);
   const loading = closeLoading || isPending;
 
   useEffect(() => {
@@ -146,8 +141,11 @@ export function EditSessionDialog({
       try {
         await updateSession({
           sessionId: session.id,
+          supersetId: session.superset_id,
+          isSupersetSecondary: session.is_superset_secondary ?? false,
           date: payload.date,
-          sets: payload.sets as Array<{ reps: number; weight: number }>,
+          sets: materializeSets(payload.sets as Array<{ reps: number; weight: number }>, isBodyweight,
+            bodyWeightForEdit(session, payload.date, history.data ?? [])),
           valueMultiplier,
           suppressToast: true,
         });
@@ -170,7 +168,7 @@ export function EditSessionDialog({
 
     currentSavePromiseRef.current = savePromise;
     return savePromise;
-  }, [session.id, updateSession, valueMultiplier]);
+  }, [session, updateSession, valueMultiplier, isBodyweight, history.data]);
 
   const queueAutosave = useCallback((payload: SessionFormValues) => {
     const payloadHash = getPayloadHash(payload);
@@ -289,16 +287,16 @@ export function EditSessionDialog({
   };
 
   const statusLabel = {
-    saved: "Saved",
+    saved: "Saved on this device",
     pending: "Saving soon...",
     saving: "Saving...",
     invalid: "Fix invalid fields to save",
-    error: "Save failed",
+    error: "Save failed. Check the date, profile weight and connection.",
   }[saveStatus];
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] max-h-[90dvh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Session</DialogTitle>
           <DialogDescription>
@@ -327,24 +325,13 @@ export function EditSessionDialog({
             </div>
 
             <div className="space-y-3">
+              {isBodyweight && <BodyweightSummary weight={bodyWeight} loading={history.isLoading} />}
               <div className="flex items-center justify-between">
                 <div>
                   <FormLabel>Sets ({watchedSets.length})</FormLabel>
                   <p className="text-xs text-muted-foreground">{totalReps.toLocaleString()} total reps</p>
                 </div>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={(event) => {
-                    event.currentTarget.blur();
-                    addSet();
-                  }}
-                  className="active:scale-95 transition-transform"
-                >
-                  <Plus className="h-4 w-4 mr-1" />
-                  Add Set
-                </Button>
+
               </div>
 
               <div ref={setsRef} className="max-h-[30vh] overflow-y-auto space-y-2 sets-scrollbar pr-1">
@@ -361,7 +348,7 @@ export function EditSessionDialog({
                           <FormItem>
                             {index === 0 && <FormLabel>Reps</FormLabel>}
                             <FormControl>
-                              <Input type="number" min="1" {...field} />
+                              <Input type="number" inputMode="numeric" aria-label={`Set ${index + 1} repetitions`} min="1" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -372,11 +359,12 @@ export function EditSessionDialog({
                         name={`sets.${index}.weight`}
                         render={({ field }) => (
                           <FormItem>
-                            {index === 0 && <FormLabel>{getUnitLabel((unit || "weight") as UnitType)}</FormLabel>}
+                            {index === 0 && <FormLabel>{isBodyweight ? "Added weight (kg)" : getUnitLabel((unit || "weight") as UnitType)}</FormLabel>}
                             <FormControl>
-                              <Input type="number" min="0" step="0.5" {...field} />
+                              <Input type="number" inputMode="decimal" aria-label={`Set ${index + 1} ${isBodyweight ? "added weight" : "load"}`} min="0" step="0.5" {...field} />
                             </FormControl>
                             <FormMessage />
+                            {isBodyweight && bodyWeight !== null && <p className="text-xs text-muted-foreground">{bodyWeight} + {Number(field.value) || 0} = {Math.round((bodyWeight + Number(field.value || 0)) * 100) / 100} kg</p>}
                           </FormItem>
                         )}
                       />
@@ -386,6 +374,7 @@ export function EditSessionDialog({
                         type="button"
                         size="icon"
                         variant="ghost"
+                        aria-label={`Remove set ${index + 1}`}
                         onClick={() => removeSet(index)}
                         className={index === 0 ? "mt-8" : ""}
                       >
@@ -398,7 +387,12 @@ export function EditSessionDialog({
             </div>
 
             <div className="space-y-2 pt-4">
-              <p className="text-center text-xs text-muted-foreground">{statusLabel}</p>
+              <p role="status" className="text-center text-xs text-muted-foreground">{statusLabel}</p>
+              <Button type="button" size="lg" disabled={loading}
+                onClick={(event) => { event.currentTarget.blur(); addSet(); }}
+                className="h-14 w-full rounded-xl bg-accent text-base font-semibold text-accent-foreground hover:bg-accent/90 focus-visible:ring-accent active:scale-[0.98]">
+                <Plus className="h-5 w-5" /> Add Set
+              </Button>
               <Button
                 type="button"
                 className="w-full"
