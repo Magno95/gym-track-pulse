@@ -86,7 +86,7 @@ export async function addToSyncQueue(input: Pick<SyncOperation, "type" | "payloa
   }
   const operation: SyncOperation = {
     ...input, payload, userId, id: replace?.id ?? crypto.randomUUID(), version: crypto.randomUUID(),
-    timestamp: replace?.timestamp ?? Math.max(Date.now(), (queue.at(-1)?.timestamp ?? 0) + 1),
+    timestamp: replace?.timestamp ?? Math.max(Date.now(), (queue[queue.length - 1]?.timestamp ?? 0) + 1),
     retries: 0, nextAttemptAt: 0,
   };
   await tx.store.put(operation); await tx.done;
