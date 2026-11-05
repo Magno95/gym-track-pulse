@@ -170,3 +170,15 @@ test("published sessions show the Strava link and uncertain sessions cannot be s
   try { assert.equal(uncertain.renderer.root.findAllByType("form").length, 0); }
   finally { await uncertain.close(); }
 });
+
+test("a rejected upload with a known ID can be checked explicitly without resubmitting", async () => {
+  const v = await view({ publication: { status: "failed", activityId: null, canCheck: true, error: "Duplicato Strava" } });
+  try {
+    await v.until(() => v.renderer.root.findAllByType("form").length > 0);
+    const check = v.renderer.root.findAllByType("button").find((button) => button.children.includes("Verifica esito su Strava"));
+    assert.ok(check);
+    await act(async () => check.props.onClick());
+    assert.equal(v.requests.filter((request) => request.action === "upload-status").length, 1);
+    assert.equal(v.requests.some((request) => request.action === "publish"), false);
+  } finally { await v.close(); }
+});

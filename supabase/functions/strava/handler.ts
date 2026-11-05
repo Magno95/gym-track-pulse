@@ -11,6 +11,11 @@ interface ImportedActivity { athlete_id: number; activity: ImportedStravaActivit
 class HttpError extends Error { constructor(message: string, readonly status = 400) { super(message); } }
 const canRead = (scope: string) => scope.split(/[,\s]+/).some((value) => value === "activity:read" || value === "activity:read_all");
 const duplicateMessage = "Strava ha riconosciuto un duplicato. I dati importati sono salvati: puoi eliminare manualmente l’attività originale su Strava e riprovare.";
+function uploadFailureMessage(detail: string) {
+  if (!/duplicat/i.test(detail)) return "Strava non ha elaborato la sessione. Verifica che non sia già presente prima di riprovare.";
+  const reference = detail.match(/duplicate of (activity|upload)\s+(\d{1,20})/i);
+  return duplicateMessage + (reference ? ` Riferimento Strava: ${reference[1].toLowerCase() === "activity" ? "attività" : "upload"} ${reference[2]}.` : "");
+}
 
 // Injectable boundaries let tests exercise real routing, auth and upload behavior.
 export function createStravaHandler(config: Config, admin: SupabaseClient, http: typeof fetch = fetch) {
@@ -96,7 +101,7 @@ export function createStravaHandler(config: Config, admin: SupabaseClient, http:
     const uploadId = upload.id_str ?? (upload.id ? String(upload.id) : null);
     if (!uploadId) throw new HttpError("Identificatore upload Strava mancante.", 502);
     check(await admin.from("strava_publications").update({ upload_id: uploadId, activity_id: activityId, status,
-      error: upload.error ? /duplicat/i.test(upload.error) ? duplicateMessage : "Strava non ha elaborato la sessione. Verifica che non sia già presente prima di riprovare." : null,
+      error: upload.error ? uploadFailureMessage(upload.error) : null,
       updated_at: new Date().toISOString() }).eq("user_id", userId).eq("session_date", date));
     return publicPublication(await publication(userId, date));
   }
@@ -235,7 +240,7 @@ export function createStravaHandler(config: Config, admin: SupabaseClient, http:
           return json({ importedActivity: activity });
         }
         if (input.action === "upload-status") {
-          if (!previous?.upload_id || previous.status === "published" || previous.status === "failed") return json({ publication: publicPublication(previous) });
+          if (!previous?.upload_id || previous.status === "published") return json({ publication: publicPublication(previous) });
           if (previous.athlete_id !== row.athlete_id) throw new HttpError("Ricollega l'account Strava usato per questa pubblicazione.", 409);
           const response = await http(`https://www.strava.com/api/v3/uploads/${encodeURIComponent(previous.upload_id)}`, {
             headers: { Authorization: `Bearer ${access}` }, signal: AbortSignal.timeout(12000) });
@@ -252,12 +257,16 @@ export function createStravaHandler(config: Config, admin: SupabaseClient, http:
         let workout;
         try { workout = buildStravaWorkout(await readSessions(userId, date, jwt), options, imported?.streams); }
         catch (error) { if (error instanceof HttpError) throw error; throw new HttpError(error instanceof Error ? error.message : "Sessione non valida."); }
+        // A definitive rejection permits a new attempt. Do not reuse the rejected
+        // file's external ID: Strava can remember uploads independently of activities.
+        // The per-day record and lock still block retries after uncertain acceptance.
+        const filename = `gymtrack-${userId}-${date}${previous?.status === "failed" ? `-retry-${crypto.randomUUID()}` : ""}.json`;
         check(await admin.from("strava_publications").upsert({ user_id: userId, session_date: date, athlete_id: row.athlete_id,
           status: "uploading", upload_id: null, activity_id: null, error: null, updated_at: new Date().toISOString() }));
         const form = new FormData();
-        form.set("file", new Blob([JSON.stringify(workout.file)], { type: "application/json" }), `gymtrack-${userId}-${date}.json`);
+        form.set("file", new Blob([JSON.stringify(workout.file)], { type: "application/json" }), filename);
         form.set("data_type", "json"); form.set("sport_type", "WeightTraining");
-        form.set("external_id", `gymtrack-${userId}-${date}.json`);
+        form.set("external_id", filename);
         form.set("name", options.name.trim()); form.set("description", workout.description);
         try {
           const response = await http("https://www.strava.com/api/v3/uploads", { method: "POST", body: form,
@@ -266,7 +275,7 @@ export function createStravaHandler(config: Config, admin: SupabaseClient, http:
             const definite = response.status >= 400 && response.status < 500;
             const detail = await response.text();
             check(await admin.from("strava_publications").update({ status: definite ? "failed" : "uncertain",
-              error: response.status === 429 ? "Limite Strava raggiunto. Riprova più tardi." : definite && /duplicat/i.test(detail) ? duplicateMessage : "Strava non ha accettato l'upload. Verifica l'attività su Strava prima di riprovare.",
+              error: response.status === 429 ? "Limite Strava raggiunto. Riprova più tardi." : definite && /duplicat/i.test(detail) ? uploadFailureMessage(detail) : "Strava non ha accettato l'upload. Verifica l'attività su Strava prima di riprovare.",
               updated_at: new Date().toISOString() }).eq("user_id", userId).eq("session_date", date));
             return json({ publication: publicPublication(await publication(userId, date)) });
           }

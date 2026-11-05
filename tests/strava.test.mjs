@@ -337,11 +337,16 @@ test("duplicate rejection can be retried from the saved snapshot without re-read
   const rejected = await b.send({ action: "publish", name: "Palestra", useImportedActivity: true });
   assert.equal(rejected.body.publication.status, "failed");
   assert.match(rejected.body.publication.error, /duplicato.*salvati/);
+  const rejectedForm = b.calls.at(-1).body;
+  const rejectedId = rejectedForm.get("external_id");
+  const rejectedFile = await rejectedForm.get("file").text();
   b.upstream(async (url) => {
     assert.ok(url.endsWith("/uploads"), "retry must not fetch the original activity");
     return Response.json({ id_str: "124", activity_id: 457 });
   });
   assert.equal((await b.send({ action: "publish", name: "Palestra", useImportedActivity: true })).body.publication.status, "published");
+  assert.notEqual(b.calls.at(-1).body.get("external_id"), rejectedId);
+  assert.equal(await b.calls.at(-1).body.get("file").text(), rejectedFile);
   assert.equal(JSON.parse(await b.calls.at(-1).body.get("file").text()).streams.heartrate.length, 4);
   assert.equal(b.tables.strava_imports.length, 1);
   assert.equal((await b.send({ action: "import-activity", activityId: "987" })).status, 409);
@@ -357,7 +362,14 @@ test("duplicates detected during asynchronous processing remain retryable and pr
   const checked = await b.send({ action: "upload-status" });
   assert.equal(checked.body.publication.status, "failed");
   assert.match(checked.body.publication.error, /duplicato.*salvati/);
+  assert.match(checked.body.publication.error, /attività 987/);
   assert.equal(b.tables.strava_imports[0].activity.sampleCount, 4);
+  // An explicit recheck can reconcile a failed upload without uploading again.
+  b.upstream(async (url) => {
+    assert.ok(url.endsWith("/uploads/123"));
+    return Response.json({ id_str: "123", activity_id: 456, error: null });
+  });
+  assert.equal((await b.send({ action: "upload-status" })).body.publication.status, "published");
 });
 
 test("imported data stays isolated by user and athlete, and disconnect clears the snapshot", async () => {

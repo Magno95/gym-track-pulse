@@ -145,8 +145,14 @@ identità dell'atleta dal client. Le modifiche offline bloccano la pubblicazione
 finché la sincronizzazione non è completa.
 
 Una lease PostgreSQL serializza le operazioni per account, compresi rinnovo token
-e upload. La chiave `(user_id, session_date)` e un `external_id` stabile impediscono
-invii ripetuti della stessa giornata. Il modello Sessions raggruppa gli esercizi
+e upload. La chiave `(user_id, session_date)` e gli stati persistiti impediscono
+invii ripetuti della stessa giornata. Solo dopo un rifiuto definitivo (`failed`),
+un nuovo tentativo usa un identificativo file e `external_id` nuovi; i contenuti,
+gli orari e i campioni restano identici. Uno stato incerto continua a bloccare
+qualsiasi nuovo upload. **Verifica esito su Strava** è disponibile anche per un
+upload fallito con ID noto e riconcilia lo stato senza ripubblicare. Quando Strava
+indica un'attività o un upload duplicato, il messaggio include il relativo ID.
+Il modello Sessions raggruppa gli esercizi
 per data: viene quindi creata una sola attività Strava per giornata, senza
 aggiornamenti automatici dopo successive modifiche in GymTrack.
 
@@ -195,6 +201,19 @@ come `20261105000000` e `20261105001000`. Verifica sul database ospitato:
 cinque tabelle presenti, RLS attiva, ruoli browser senza privilegi, accesso
 `service_role` e RPC di lock privata, tutti confermati. Le query ripetibili sono
 in [verify_strava.sql](../supabase/verify_strava.sql).
+
+Il frontend è stato sincronizzato su GitHub e pubblicato da Netlify; la funzione
+Cloud risponde con CORS limitato al dominio dell'app e rifiuta le richieste
+anonime. Dopo l'inserimento dei segreti dal modulo protetto Lovable, il consenso
+OAuth e l'importazione reale del 5 novembre 2026 sono riusciti: durata 3736
+secondi e 1881 campioni cardiaci. Il primo upload è stato rifiutato come duplicato
+del Garmin; l'utente ha eliminato manualmente l'originale da Strava. La copia
+importata rimane disponibile per i tentativi successivi.
+
+La CI GitHub ha superato lint, test e build. Il controllo `npm audit` segnala
+vulnerabilità nelle dipendenze preesistenti (minimatch, postcss-selector-parser,
+Vite e Zod); non viene disabilitato e gli aggiornamenti di quelle dipendenze
+restano separati dall'integrazione Strava.
 
 ### Prova reale dopo il rilascio
 

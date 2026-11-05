@@ -149,7 +149,7 @@ function PublishDialog({ date, exercises, complete, userId }: Props & { userId: 
           </div>}
           {busy && <div role="status" className="flex items-center gap-2 text-sm"><Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" />Strava sta elaborando la sessione. Puoi chiudere questa finestra.</div>}
           {publication?.status === "uncertain" && <p role="alert" className="text-sm">L’esito dell’invio è incerto. Controlla il tuo profilo Strava: un nuovo invio è bloccato per evitare duplicati.</p>}
-          {publication?.status === "uncertain" && publication.canCheck && <Button variant="outline" disabled={mutation.isPending} onClick={() => mutation.mutate({ action: "upload-status" })}>Verifica esito su Strava</Button>}
+          {(publication?.status === "uncertain" || publication?.status === "failed") && publication.canCheck && <Button variant="outline" disabled={working} onClick={() => mutation.mutate({ action: "upload-status" })}>Verifica esito su Strava</Button>}
           {busy && uploadStatus.isError && <p role="alert" className="text-sm">{uploadStatus.error.message}</p>}
           {publication?.error && <p role="alert" className="text-sm text-destructive">{publication.error}</p>}
           {status.data?.connected && !busy && publication?.status !== "published" && publication?.status !== "uncertain" && <form onSubmit={publish} className="space-y-4">
