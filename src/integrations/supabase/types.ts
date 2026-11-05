@@ -14,16 +14,28 @@ export type Database = {
   }
   public: {
     Tables: {
-      profiles: {
-        Row: { user_id: string; height_cm: number | null }
-        Insert: { user_id: string; height_cm?: number | null }
-        Update: { user_id?: string; height_cm?: number | null }
-        Relationships: []
-      }
       body_weight_history: {
-        Row: { id: string; user_id: string; effective_date: string; weight_kg: number; created_at: string }
-        Insert: { id?: string; user_id: string; effective_date: string; weight_kg: number; created_at?: string }
-        Update: { id?: string; user_id?: string; effective_date?: string; weight_kg?: number; created_at?: string }
+        Row: {
+          created_at: string
+          effective_date: string
+          id: string
+          user_id: string
+          weight_kg: number
+        }
+        Insert: {
+          created_at?: string
+          effective_date: string
+          id?: string
+          user_id: string
+          weight_kg: number
+        }
+        Update: {
+          created_at?: string
+          effective_date?: string
+          id?: string
+          user_id?: string
+          weight_kg?: number
+        }
         Relationships: []
       }
       exercises: {
@@ -32,8 +44,8 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
-          is_bodyweight: boolean
           image_url: string | null
+          is_bodyweight: boolean
           name: string
           personal_records: Json | null
           superset_multiplier: number | null
@@ -45,8 +57,8 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
-          is_bodyweight?: boolean
           image_url?: string | null
+          is_bodyweight?: boolean
           name: string
           personal_records?: Json | null
           superset_multiplier?: number | null
@@ -58,12 +70,27 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
-          is_bodyweight?: boolean
           image_url?: string | null
+          is_bodyweight?: boolean
           name?: string
           personal_records?: Json | null
           superset_multiplier?: number | null
           unit?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          height_cm: number | null
+          user_id: string
+        }
+        Insert: {
+          height_cm?: number | null
+          user_id: string
+        }
+        Update: {
+          height_cm?: number | null
           user_id?: string
         }
         Relationships: []
@@ -79,12 +106,11 @@ export type Database = {
           series: number
           sets: Json | null
           superset_id: string | null
-          value_multiplier: number
           value: number
+          value_multiplier: number
           weight: number
         }
         Insert: {
-          value_multiplier?: number
           created_at?: string
           date: string
           exercise_id: string
@@ -95,6 +121,7 @@ export type Database = {
           sets?: Json | null
           superset_id?: string | null
           value: number
+          value_multiplier: number
           weight: number
         }
         Update: {
@@ -107,8 +134,8 @@ export type Database = {
           series?: number
           sets?: Json | null
           superset_id?: string | null
-          value_multiplier?: number
           value?: number
+          value_multiplier?: number
           weight?: number
         }
         Relationships: [
@@ -121,15 +148,150 @@ export type Database = {
           },
         ]
       }
+      strava_connections: {
+        Row: {
+          access_token: string
+          athlete_id: number
+          expires_at: number
+          refresh_token: string
+          scope: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token: string
+          athlete_id: number
+          expires_at: number
+          refresh_token: string
+          scope: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token?: string
+          athlete_id?: number
+          expires_at?: number
+          refresh_token?: string
+          scope?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      strava_imports: {
+        Row: {
+          activity: Json
+          athlete_id: number
+          session_date: string
+          streams: Json | null
+          user_id: string
+        }
+        Insert: {
+          activity: Json
+          athlete_id: number
+          session_date: string
+          streams?: Json | null
+          user_id: string
+        }
+        Update: {
+          activity?: Json
+          athlete_id?: number
+          session_date?: string
+          streams?: Json | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      strava_locks: {
+        Row: {
+          expires_at: string
+          token: string
+          user_id: string
+        }
+        Insert: {
+          expires_at: string
+          token: string
+          user_id: string
+        }
+        Update: {
+          expires_at?: string
+          token?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      strava_oauth_states: {
+        Row: {
+          expires_at: string
+          session_date: string
+          state_hash: string
+          user_id: string
+        }
+        Insert: {
+          expires_at?: string
+          session_date: string
+          state_hash: string
+          user_id: string
+        }
+        Update: {
+          expires_at?: string
+          session_date?: string
+          state_hash?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      strava_publications: {
+        Row: {
+          activity_id: string | null
+          athlete_id: number
+          error: string | null
+          session_date: string
+          status: string
+          updated_at: string
+          upload_id: string | null
+          user_id: string
+        }
+        Insert: {
+          activity_id?: string | null
+          athlete_id: number
+          error?: string | null
+          session_date: string
+          status: string
+          updated_at?: string
+          upload_id?: string | null
+          user_id: string
+        }
+        Update: {
+          activity_id?: string | null
+          athlete_id?: number
+          error?: string | null
+          session_date?: string
+          status?: string
+          updated_at?: string
+          upload_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      claim_strava_lock: {
+        Args: { p_token: string; p_user_id: string }
+        Returns: boolean
+      }
       get_exercise_overview: {
         Args: { p_user_id: string }
-        Returns: { exercise: Json; sessions: Json }[]
+        Returns: {
+          exercise: Json
+          sessions: Json
+        }[]
       }
+      valid_personal_records: { Args: { items: Json }; Returns: boolean }
+      valid_session_sets: { Args: { items: Json }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
@@ -148,12 +310,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -177,11 +339,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -202,11 +364,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -227,11 +389,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -244,11 +406,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
