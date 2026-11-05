@@ -206,9 +206,15 @@ Il frontend è stato sincronizzato su GitHub e pubblicato da Netlify; la funzion
 Cloud risponde con CORS limitato al dominio dell'app e rifiuta le richieste
 anonime. Dopo l'inserimento dei segreti dal modulo protetto Lovable, il consenso
 OAuth e l'importazione reale del 5 novembre 2026 sono riusciti: durata 3736
-secondi e 1881 campioni cardiaci. Il primo upload è stato rifiutato come duplicato
+secondi e curva cardiaca disponibili. Il primo upload è stato rifiutato come duplicato
 del Garmin; l'utente ha eliminato manualmente l'originale da Strava. La copia
 importata rimane disponibile per i tentativi successivi.
+
+La prova finale è riuscita dopo il redeploy della correzione dei ritentativi.
+Verifica sulla pagina Strava: durata totale e in movimento corrispondenti alla
+registrazione originale, curva cardiaca con media e massimo e riepilogo degli
+esercizi con le rispettive serie. Il nuovo upload ha usato la copia salvata in
+GymTrack, senza rileggere l'attività Garmin che l'utente aveva eliminato.
 
 La CI GitHub ha superato lint, test e build. Il controllo `npm audit` segnala
 vulnerabilità nelle dipendenze preesistenti (minimatch, postcss-selector-parser,
