@@ -13,6 +13,7 @@ import { SyncStatus } from "@/components/SyncStatus";
 const Index = lazy(() => import("./pages/Index"));
 const ExerciseDetail = lazy(() => import("./pages/ExerciseDetail"));
 const SessionDetail = lazy(() => import("./pages/SessionDetail"));
+const StravaCallback = lazy(() => import("./pages/StravaCallback"));
 const Auth = lazy(() => import("./pages/Auth"));
 const Profile = lazy(() => import("./pages/Profile"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -41,6 +42,7 @@ const App = () => (
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/exercise/:id" element={<ProtectedRoute><ExerciseDetail /></ProtectedRoute>} />
           <Route path="/session/:date" element={<ProtectedRoute><SessionDetail /></ProtectedRoute>} />
+          <Route path="/strava/callback" element={<ProtectedRoute><StravaCallback /></ProtectedRoute>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

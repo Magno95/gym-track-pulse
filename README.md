@@ -68,3 +68,4 @@ Le immagini degli esercizi mantengono la lettura pubblica. Le scritture sono ris
 - [Analisi iniziale del 2 ottobre](docs/analisi-prestazioni-sicurezza-2026-10-02.md).
 - [Correzioni e verifiche del 3 ottobre](docs/correzioni-prestazioni-sicurezza-2026-10-03.md).
 - [Profili e sessioni a corpo libero](docs/bodyweight.md).
+- [Integrazione Strava: configurazione, mappatura esercizi e pubblicazione](docs/strava.md).

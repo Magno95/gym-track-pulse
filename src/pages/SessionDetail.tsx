@@ -10,6 +10,7 @@ import { ArrowLeft, Dumbbell, Zap } from "lucide-react";
 import { format } from "date-fns";
 import { enUS } from "date-fns/locale";
 import { getCategoryIcon } from "@/lib/categoryIcons";
+import { StravaPublish } from "@/components/StravaPublish";
 
 interface SessionExercise {
   sessionId: string;
@@ -185,6 +186,7 @@ const SessionDetail = () => {
 
       {/* Exercise List */}
       <div className="container max-w-2xl mx-auto px-4 py-6 space-y-3">
+        <StravaPublish date={date} exercises={data} complete={hasCompleteHistory && !isError} />
         {isError && <QueryError onRetry={() => void refetch()} />}
         {!hasCompleteHistory && <p role="status" className="text-sm text-muted-foreground">
           Only changes saved on this device are available. Connect to load the full day.

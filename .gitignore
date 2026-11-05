@@ -13,6 +13,10 @@ dist-ssr
 src/tailwind.config.lov.json
 .lov.tailwind.config.js
 *.local
+supabase/functions/.env
+supabase/functions/.env.*
+!supabase/functions/.env.example
+supabase/.temp/
 
 # Editor directories and files
 .vscode/*

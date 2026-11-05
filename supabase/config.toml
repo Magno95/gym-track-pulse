@@ -1,1 +1,5 @@
 project_id = "gixmjerckbujswifueeb"
+
+[functions.strava]
+# Every action, including OAuth completion, also checks auth.getUser in the handler.
+verify_jwt = true

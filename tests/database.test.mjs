@@ -8,7 +8,7 @@ test("actual migrations enforce ownership, validation, atomicity, idempotency an
   const db = new PGlite();
   try {
     await db.exec(`
-      CREATE ROLE anon; CREATE ROLE authenticated;
+      CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role BYPASSRLS;
       CREATE SCHEMA supabase_migrations;
       CREATE TABLE supabase_migrations.schema_migrations(version text PRIMARY KEY);
       CREATE SCHEMA auth; CREATE TABLE auth.users(id uuid PRIMARY KEY);
