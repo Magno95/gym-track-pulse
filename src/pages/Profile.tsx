@@ -47,7 +47,6 @@ export default function Profile() {
       <div className="container mx-auto flex max-w-2xl items-center gap-3 px-4 py-4">
         <Button asChild variant="ghost" size="icon"><Link to="/" aria-label="Back to exercises"><ArrowLeft className="h-5 w-5" /></Link></Button>
         <h1 className="flex-1 text-xl font-bold">Profile</h1>
-        <Button variant="ghost" size="icon" aria-label="Sign out" onClick={signOut}><LogOut className="h-5 w-5" /></Button>
       </div>
     </header>
     <main className="container mx-auto max-w-2xl space-y-6 px-4 py-6">
@@ -105,6 +104,12 @@ export default function Profile() {
         <table className="mt-3 w-full text-sm"><thead><tr className="text-left text-muted-foreground"><th className="px-5 py-3 font-medium">Applies from</th><th className="px-5 py-3 text-right font-medium">Weight</th></tr></thead><tbody>{measurements.slice(-visibleMeasurements).reverse().map((entry) => <tr key={entry.id} className="border-t border-border/50"><td className="px-5 py-3">{dateLabel(entry.effective_date)}</td><td className="px-5 py-3 text-right font-medium tabular-nums">{entry.weight_kg} kg</td></tr>)}</tbody></table>
         {measurements.length > visibleMeasurements && <div className="p-4 text-center"><Button variant="outline" onClick={() => setVisibleMeasurements((count) => count + 30)}>Show older measurements</Button></div>}
       </Card>}
+      <div className="border-t border-border/50 pt-6">
+        <Button type="button" variant="outline" onClick={signOut} className="h-12 w-full gap-2">
+          <LogOut className="h-5 w-5" aria-hidden="true" />
+          Sign out
+        </Button>
+      </div>
     </main>
     <FloatingNavigation />
   </div>;

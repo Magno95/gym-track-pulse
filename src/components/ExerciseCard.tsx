@@ -55,7 +55,7 @@ export function ExerciseCard({ exercise, onDeleted }: ExerciseCardProps) {
     setDeleting(true);
     try {
       await addToSyncQueue({ type: "delete_exercise", payload: { exerciseId: exercise.id, imageUrl: exercise.image_url ?? undefined } }, exercise.user_id);
-      toast.success("Deletion saved on this device. Synchronization pending."); onDeleted();
+      onDeleted();
     } catch { toast.error("Could not save the deletion. Please retry."); }
     finally { setDeleting(false); }
   };

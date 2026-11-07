@@ -1,3 +1,4 @@
+import { createUuid } from "@/lib/uuid";
 import { requireUserId } from "@/lib/authSession";
 import { processQueue, addToSyncQueue } from "@/lib/localCache";
 import { resizeExerciseImage } from "@/lib/exerciseImages";
@@ -195,7 +196,7 @@ export function EditExerciseDetailsDialog({
   };
 
   const uploadImage = async (file: File, userId: string): Promise<string> => {
-    const path = `${userId}/${exerciseId}/${crypto.randomUUID()}.webp`;
+    const path = `${userId}/${exerciseId}/${createUuid()}.webp`;
     const url = supabase.storage.from("exercise-images").getPublicUrl(path).data.publicUrl;
     const thumbnail = await resizeExerciseImage(file, 192);
     requireUserId(userId);

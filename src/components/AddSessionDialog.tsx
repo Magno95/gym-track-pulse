@@ -31,7 +31,7 @@ import { Plus, Zap, X } from "lucide-react";
 import { supabaseStore, ExerciseWithSessions } from "@/lib/supabaseStore";
 import { getCachedExercises } from "@/lib/localCache";
 import { getCategoryIcon } from "@/lib/categoryIcons";
-import { useAddSession, useAddSupersetSession } from "@/hooks/useSessionMutations";
+import { useAddSession, useAddSupersetSession, useUpdateSession } from "@/hooks/useSessionMutations";
 
 const createSessionSchema = (primaryTimed: boolean, secondaryTimed: boolean) => z.object({
   date: z.string().min(1, { message: "Date is required" }),
@@ -82,8 +82,15 @@ export function AddSessionDialog({
   const setOpen = (next: boolean) => { setLocalOpen(next); onOpenChange?.(next); };
   const addSessionMutation = useAddSession(exerciseId);
   const addSupersetMutation = useAddSupersetSession();
+  const updatePrimaryMutation = useUpdateSession(exerciseId);
+  const savedSessionRef = useRef<{ primaryId: string; secondaryId?: string; supersetId?: string } | null>(null);
+  const saveInFlightRef = useRef(false);
+  const lastSavedValuesRef = useRef("");
+  const [saving, setSaving] = useState(false);
+  const [hasLoggedSession, setHasLoggedSession] = useState(false);
   const [exercises, setExercises] = useState<ExerciseWithSessions[]>([]);
   const [selectedSecondaryExercise, setSelectedSecondaryExercise] = useState<ExerciseWithSessions | null>(null);
+  const updateSecondaryMutation = useUpdateSession(selectedSecondaryExercise?.id ?? "");
   const primarySetsRef = useRef<HTMLDivElement>(null);
   const secondarySetsRef = useRef<HTMLDivElement>(null);
   const isTimedBodyweight = isBodyweight && unit === "time";
@@ -110,7 +117,7 @@ export function AddSessionDialog({
   const primarySets = form.watch("sets") || [];
   const secondarySets = form.watch("secondarySets") || [];
   const multiplier = supersetMultiplier || 1.2;
-  const loading = addSessionMutation.isPending || addSupersetMutation.isPending;
+  const loading = saving;
   const unitLabel = getUnitLabel((unit || "weight") as UnitType);
 
   const scoreSets = (sets: Array<{ reps?: number; weight?: number }>, bodyweight: boolean) =>
@@ -120,18 +127,6 @@ export function AddSessionDialog({
     ? Math.round(scoreSets(secondarySets, secondaryIsBodyweight) * multiplier)
     : 0;
   const totalScore = primaryScore + secondaryScore;
-
-  const resetFormAfterSave = (data: SessionFormValues) => {
-    const lastSet = data.sets[data.sets.length - 1];
-    form.reset({
-      date: todayLocal(),
-      sets: [{ reps: lastSet.reps, weight: lastSet.weight }],
-      isSuperSet: false,
-      secondaryExerciseId: undefined,
-      secondarySets: [{ reps: 10, weight: 0 }],
-    });
-    setSelectedSecondaryExercise(null);
-  };
 
   useEffect(() => {
     if (!open) return;
@@ -147,18 +142,6 @@ export function AddSessionDialog({
       .catch((error) => console.error("Error loading exercises:", error));
   }, [open, exerciseId]);
 
-  const addSet = () => {
-    const currentSets = form.getValues("sets");
-    const lastSet = currentSets[currentSets.length - 1];
-    form.setValue("sets", [...currentSets, { reps: lastSet?.reps ?? 10, weight: lastSet?.weight ?? 0 }], {
-      shouldDirty: true,
-      shouldValidate: true,
-    });
-    setTimeout(() => {
-      primarySetsRef.current?.scrollTo({ top: primarySetsRef.current.scrollHeight, behavior: "smooth" });
-    }, 50);
-  };
-
   const removeSet = (index: number) => {
     const currentSets = form.getValues("sets");
     if (currentSets.length > 1) {
@@ -167,18 +150,6 @@ export function AddSessionDialog({
         shouldValidate: true,
       });
     }
-  };
-
-  const addSecondarySet = () => {
-    const currentSets = form.getValues("secondarySets") || [];
-    const lastSet = currentSets[currentSets.length - 1];
-    form.setValue("secondarySets", [...currentSets, { reps: lastSet?.reps ?? 10, weight: lastSet?.weight ?? 0 }], {
-      shouldDirty: true,
-      shouldValidate: true,
-    });
-    setTimeout(() => {
-      secondarySetsRef.current?.scrollTo({ top: secondarySetsRef.current.scrollHeight, behavior: "smooth" });
-    }, 50);
   };
 
   const removeSecondarySet = (index: number) => {
@@ -210,53 +181,76 @@ export function AddSessionDialog({
     });
   };
 
-  const onSubmit = async (data: SessionFormValues) => {
-    const resetForm = () => {
-      resetFormAfterSave(data);
-      setOpen(false);
-      onSessionAdded();
-    };
-
-    let savedPrimarySets;
-    let savedSecondarySets: ReturnType<typeof materializeSets> = [];
+  const persistSession = async (data: SessionFormValues): Promise<boolean> => {
+    if (saveInFlightRef.current) return false;
+    if (data.isSuperSet && !data.secondaryExerciseId) return false;
+    saveInFlightRef.current = true;
+    setSaving(true);
     try {
       const weightAtDate = findBodyWeight(history.data ?? [], data.date);
-      savedPrimarySets = materializeSets(data.sets as Array<{ reps: number; weight: number }>, isBodyweight, weightAtDate, unit);
-      if (data.isSuperSet && data.secondaryExerciseId && data.secondarySets?.length) {
-        savedSecondarySets = materializeSets(data.secondarySets as Array<{ reps: number; weight: number }>, secondaryIsBodyweight, weightAtDate, selectedSecondaryExercise?.unit);
+      const primary = materializeSets(data.sets as Array<{ reps: number; weight: number }>, isBodyweight, weightAtDate, unit);
+      const secondary = data.isSuperSet && data.secondaryExerciseId && data.secondarySets?.length
+        ? materializeSets(data.secondarySets as Array<{ reps: number; weight: number }>, secondaryIsBodyweight, weightAtDate, selectedSecondaryExercise?.unit)
+        : [];
+      const saved = savedSessionRef.current;
+      if (saved) {
+        await updatePrimaryMutation.mutateAsync({ sessionId: saved.primaryId, date: data.date, sets: primary,
+          supersetId: saved.supersetId });
+        if (saved.secondaryId) {
+          await updateSecondaryMutation.mutateAsync({ sessionId: saved.secondaryId, date: data.date, sets: secondary,
+            supersetId: saved.supersetId, isSupersetSecondary: true, valueMultiplier: multiplier });
+        }
+      } else if (data.isSuperSet && data.secondaryExerciseId && secondary.length) {
+        const result = await addSupersetMutation.mutateAsync({ primaryExerciseId: exerciseId,
+          secondaryExerciseId: data.secondaryExerciseId, date: data.date, primarySets: primary, secondarySets: secondary, multiplier });
+        savedSessionRef.current = { primaryId: result.primary.id, secondaryId: result.secondary.id, supersetId: result.supersetId };
+      } else {
+        const result = await addSessionMutation.mutateAsync({ date: data.date, sets: primary });
+        savedSessionRef.current = { primaryId: result.id };
       }
+      lastSavedValuesRef.current = JSON.stringify(data);
+      setHasLoggedSession(true);
+      onSessionAdded();
+      return true;
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not prepare session load.");
-      return;
-    }
-
-    if (data.isSuperSet && data.secondaryExerciseId && savedSecondarySets?.length) {
-      addSupersetMutation.mutate(
-        {
-          primaryExerciseId: exerciseId,
-          secondaryExerciseId: data.secondaryExerciseId,
-          date: data.date,
-          primarySets: savedPrimarySets,
-          secondarySets: savedSecondarySets,
-          multiplier,
-        },
-        { onSuccess: resetForm }
-      );
-    } else {
-      addSessionMutation.mutate(
-        {
-          date: data.date,
-          sets: savedPrimarySets,
-        },
-        { onSuccess: resetForm }
-      );
+      toast.error(error instanceof Error ? error.message : "Could not save session. Please retry.");
+      return false;
+    } finally {
+      saveInFlightRef.current = false;
+      setSaving(false);
     }
   };
 
-  const handleOpenChange = (nextOpen: boolean) => {
-    if (!loading) {
-      setOpen(nextOpen);
+  const addSet = async (field: "sets" | "secondarySets" = "sets") => {
+    if (saveInFlightRef.current) return;
+    if (!await form.trigger(undefined, { shouldFocus: true })) return;
+    const data = sessionSchema.parse(form.getValues());
+    // The first click confirms the initial set; later clicks add another one.
+    if (savedSessionRef.current) {
+      const sets = data[field] || [];
+      const lastSet = sets[sets.length - 1];
+      data[field] = [...sets, { reps: lastSet?.reps ?? 10, weight: lastSet?.weight ?? 0 }];
     }
+    if (!await persistSession(data)) return;
+    form.reset(data);
+    const scrollRef = field === "sets" ? primarySetsRef : secondarySetsRef;
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+  };
+
+  const handleOpenChange = async (nextOpen: boolean) => {
+    if (saveInFlightRef.current) return;
+    if (!nextOpen && savedSessionRef.current && JSON.stringify(form.getValues()) !== lastSavedValuesRef.current) {
+      if (!await form.trigger(undefined, { shouldFocus: true })) return;
+      if (!await persistSession(sessionSchema.parse(form.getValues()))) return;
+    }
+    if (!nextOpen) {
+      savedSessionRef.current = null;
+      setHasLoggedSession(false);
+      form.reset({ date: todayLocal(), sets: [{ reps: isTimedBodyweight ? 30 : 10, weight: 0 }],
+        isSuperSet: false, secondaryExerciseId: undefined, secondarySets: [{ reps: 10, weight: 0 }] });
+      setSelectedSecondaryExercise(null);
+    }
+    setOpen(nextOpen);
   };
 
   const renderSetsForm = (
@@ -295,7 +289,7 @@ export function AddSessionDialog({
                     <FormItem>
                       {index === 0 && <FormLabel className="text-xs">{timedBodyweight ? "Time (s)" : "Reps"}</FormLabel>}
                       <FormControl>
-                        <Input type="number" inputMode="numeric" aria-label={`Set ${index + 1} ${timedBodyweight ? "duration in seconds" : "repetitions"}`} min="1" step="1" max={timedBodyweight ? 10000 : 100} {...field} />
+                        <Input type="number" inputMode="numeric" aria-label={`Set ${index + 1} ${timedBodyweight ? "duration in seconds" : "repetitions"}`} min="1" step="1" max={timedBodyweight ? 10000 : 100} disabled={loading} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -308,7 +302,7 @@ export function AddSessionDialog({
                     <FormItem>
                       {index === 0 && <FormLabel className="text-xs">{bodyweight ? "Added weight (kg)" : displayUnitLabel}</FormLabel>}
                       <FormControl>
-                        <Input type="number" inputMode="decimal" aria-label={`Set ${index + 1} ${bodyweight ? "added weight" : "load"}`} min="0" step="0.5" {...field} />
+                        <Input type="number" inputMode="decimal" aria-label={`Set ${index + 1} ${bodyweight ? "added weight" : "load"}`} min="0" step="0.5" disabled={loading} {...field} />
                       </FormControl>
                       <FormMessage />
                       {bodyweight && bodyWeight !== null && <p className="text-xs text-muted-foreground">{bodyWeight} + {Number(field.value) || 0} = {Math.round((bodyWeight + Number(field.value || 0)) * 100) / 100} kg</p>}
@@ -322,6 +316,7 @@ export function AddSessionDialog({
                   size="icon"
                   variant="ghost"
                   aria-label={`Remove set ${index + 1}`}
+                  disabled={loading}
                   onClick={() => removeFn(index)}
                   className={index === 0 ? "mt-6" : ""}
                 >
@@ -350,11 +345,11 @@ export function AddSessionDialog({
         <DialogHeader>
           <DialogTitle>Log New Session</DialogTitle>
           <DialogDescription>
-            Record your workout session for {exerciseName}.
+            Record your workout session for {exerciseName}. Add Set saves automatically.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col h-full relative">
+          <form onSubmit={(event) => { event.preventDefault(); void addSet(); }} className="flex flex-col h-full relative">
             <div className="flex-1 space-y-4 overflow-y-auto sets-scrollbar pr-1 pb-5">
               <FormField
                 control={form.control}
@@ -363,7 +358,7 @@ export function AddSessionDialog({
                   <FormItem>
                     <FormLabel>Date</FormLabel>
                     <FormControl>
-                      <Input type="date" {...field} autoFocus={false} />
+                      <Input type="date" {...field} disabled={loading} autoFocus={false} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -397,6 +392,7 @@ export function AddSessionDialog({
                       <FormControl>
                         <Switch
                           checked={field.value}
+                          disabled={loading || hasLoggedSession}
                           onCheckedChange={(checked) => {
                             field.onChange(checked);
                             if (!checked) {
@@ -422,6 +418,7 @@ export function AddSessionDialog({
                             <button
                               key={exercise.id}
                               type="button"
+                              disabled={loading || hasLoggedSession}
                               onClick={() => handleSelectSecondaryExercise(exercise)}
                               className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-accent transition-colors"
                             >
@@ -461,6 +458,7 @@ export function AddSessionDialog({
                             type="button"
                             size="icon"
                             variant="ghost"
+                            disabled={loading || hasLoggedSession}
                             onClick={handleClearSecondaryExercise}
                             className="h-6 w-6"
                           >
@@ -476,21 +474,15 @@ export function AddSessionDialog({
             </div>
 
             <div className="sticky bottom-0 space-y-2 border-t border-border bg-background pt-4 pb-[env(safe-area-inset-bottom)]">
-              <Button type="button" size="lg" disabled={loading} onClick={(event) => { event.currentTarget.blur(); addSet(); }}
+              <Button type="button" size="lg" disabled={loading || (isSuperSet && !selectedSecondaryExercise)} onClick={(event) => { event.currentTarget.blur(); void addSet(); }}
                 className="h-14 w-full rounded-xl bg-accent text-base font-semibold text-accent-foreground hover:bg-accent/90 focus-visible:ring-accent active:scale-[0.98]">
                 <Plus className="h-5 w-5" /> {isSuperSet && selectedSecondaryExercise ? `Add Set · ${exerciseName}` : "Add Set"}
               </Button>
-              {isSuperSet && selectedSecondaryExercise && <Button type="button" size="lg" disabled={loading} onClick={(event) => { event.currentTarget.blur(); addSecondarySet(); }}
+              {isSuperSet && selectedSecondaryExercise && <Button type="button" size="lg" disabled={loading} onClick={(event) => { event.currentTarget.blur(); void addSet("secondarySets"); }}
                 className="h-14 w-full rounded-xl bg-accent text-base font-semibold text-accent-foreground hover:bg-accent/90 focus-visible:ring-accent active:scale-[0.98]">
                 <Plus className="h-5 w-5" /> Add Set · {selectedSecondaryExercise.name}
               </Button>}
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={loading || (isSuperSet && !selectedSecondaryExercise)}
-              >
-                {loading ? "Logging..." : "Log Session"}
-              </Button>
+              {loading && <p role="status" className="text-center text-xs text-muted-foreground">Saving...</p>}
             </div>
           </form>
         </Form>

@@ -1,3 +1,4 @@
+import { createUuid } from "@/lib/uuid";
 import { imagePath, thumbnailPath } from "./exerciseImages";
 import type { SessionSet } from "@/lib/bodyweight";
 import { supabase } from "@/integrations/supabase/client";
@@ -75,7 +76,7 @@ export const supabaseStore = {
     return group(exercises, sessions);
   },
   addExercise: async (exercise: Omit<ExerciseInsert, "id" | "user_id" | "created_at">, options: WriteOptions = {}): Promise<Exercise> => {
-    const userId = await authenticateWrite(options.userId); const id = options.id ?? crypto.randomUUID();
+    const userId = await authenticateWrite(options.userId); const id = options.id ?? createUuid();
     const { error } = await supabase.from("exercises").upsert({ ...exercise, id, user_id: userId }, { onConflict: "id", ignoreDuplicates: true })
       .abortSignal(signalFor(options.signal));
     if (error) throw error;
@@ -84,7 +85,7 @@ export const supabaseStore = {
     if (result.error) throw result.error; requireUserId(userId); return result.data;
   },
   addSession: async (exerciseId: string, session: { date: string; sets: SessionSet[] }, options: WriteOptions = {}): Promise<Session> => {
-    const userId = await authenticateWrite(options.userId); const id = options.id ?? crypto.randomUUID();
+    const userId = await authenticateWrite(options.userId); const id = options.id ?? createUuid();
     const { error } = await supabase.from("sessions").upsert({ ...buildSessionPayload(session, options.valueMultiplier), id, exercise_id: exerciseId },
       { onConflict: "id", ignoreDuplicates: true }).abortSignal(signalFor(options.signal));
     if (error) throw error;
@@ -95,8 +96,8 @@ export const supabaseStore = {
     options: RequestOptions & { primaryId?: string; secondaryId?: string; supersetId?: string } = {}): Promise<{ primary: Session; secondary: Session }> => {
     const userId = await authenticateWrite(options.userId);
     if (primaryExerciseId === secondaryExerciseId) throw new Error("Choose two different exercises.");
-    const primaryId = options.primaryId ?? crypto.randomUUID(), secondaryId = options.secondaryId ?? crypto.randomUUID();
-    const supersetId = options.supersetId ?? crypto.randomUUID();
+    const primaryId = options.primaryId ?? createUuid(), secondaryId = options.secondaryId ?? createUuid();
+    const supersetId = options.supersetId ?? createUuid();
     // One statement: validation/RLS failure rolls back both rows. Stable IDs make retries idempotent.
     const { error } = await supabase.from("sessions").upsert([
       { ...buildSessionPayload({ date, sets: primarySets }), id: primaryId, exercise_id: primaryExerciseId, superset_id: supersetId, is_superset_secondary: false },

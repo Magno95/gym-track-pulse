@@ -1,3 +1,4 @@
+import { createUuid } from "@/lib/uuid";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -68,8 +69,7 @@ export function AddExerciseDialog({ onExerciseAdded, open: controlledOpen, onOpe
 
   const onSubmit = async (data: ExerciseFormValues) => {
     try {
-      await addToSyncQueue({ type: "add_exercise", payload: { ...data, tempId: crypto.randomUUID() } }, userId);
-      toast.success("Exercise saved on this device. Synchronization pending.");
+      await addToSyncQueue({ type: "add_exercise", payload: { ...data, tempId: createUuid() } }, userId);
       form.reset(); setOpen(false); onExerciseAdded();
     } catch { toast.error("Could not save the exercise on this device. Please retry."); }
   };

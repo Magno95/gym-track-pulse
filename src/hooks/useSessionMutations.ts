@@ -1,3 +1,4 @@
+import { createUuid } from "@/lib/uuid";
 import type { SessionSet } from "@/lib/bodyweight";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -7,19 +8,18 @@ import { validateSession } from "@/lib/validation";
 import { useAuth } from "./useAuth";
 
 const onError = (error: Error) => toast.error(error.message || "Could not save changes on this device. Please retry.");
-const saved = () => toast.success("Saved on this device. Synchronization pending.");
 type UpdateSessionParams = { sessionId: string; date: string; sets: SessionSet[]; valueMultiplier?: number;
-  supersetId?: string | null; isSupersetSecondary?: boolean; suppressToast?: boolean };
+  supersetId?: string | null; isSupersetSecondary?: boolean };
 
 export function useAddSession(exerciseId: string) {
   const { userId } = useAuth();
   return useMutation({
     mutationFn: async (params: { date: string; sets: SessionSet[] }) => {
       validateSession(params);
-      const id = crypto.randomUUID();
+      const id = createUuid();
       await addToSyncQueue({ type: "add_session", payload: { exerciseId, ...params, tempId: id } }, userId);
       return { id, exercise_id: exerciseId, ...buildSessionPayload(params) };
-    }, onSuccess: saved, onError,
+    }, onError,
   });
 }
 export function useAddSupersetSession() {
@@ -29,10 +29,10 @@ export function useAddSupersetSession() {
       validateSession({ date: params.date, sets: params.primarySets });
       validateSession({ date: params.date, sets: params.secondarySets }, params.multiplier);
       if (params.primaryExerciseId === params.secondaryExerciseId) throw new Error("Choose two different exercises.");
-      const primaryTempId = crypto.randomUUID(), secondaryTempId = crypto.randomUUID(), supersetId = crypto.randomUUID();
+      const primaryTempId = createUuid(), secondaryTempId = createUuid(), supersetId = createUuid();
       await addToSyncQueue({ type: "add_superset_session", payload: { ...params, primaryTempId, secondaryTempId, supersetId } }, userId);
-      return { primary: { id: primaryTempId }, secondary: { id: secondaryTempId } };
-    }, onSuccess: saved, onError,
+      return { primary: { id: primaryTempId }, secondary: { id: secondaryTempId }, supersetId };
+    }, onError,
   });
 }
 export function useUpdateSession(exerciseId: string) {
@@ -44,10 +44,10 @@ export function useUpdateSession(exerciseId: string) {
         sets: params.sets, valueMultiplier: params.valueMultiplier ?? 1, supersetId: params.supersetId,
         isSupersetSecondary: params.isSupersetSecondary } }, userId);
     },
-    onSuccess: (_, params) => { if (!params.suppressToast) saved(); }, onError,
+    onError,
   });
 }
 export function useDeleteSession(_exerciseId: string) {
   const { userId } = useAuth();
-  return useMutation({ mutationFn: async (sessionId: string) => { await addToSyncQueue({ type: "delete_session", payload: { sessionId } }, userId); }, onSuccess: saved, onError });
+  return useMutation({ mutationFn: async (sessionId: string) => { await addToSyncQueue({ type: "delete_session", payload: { sessionId } }, userId); }, onError });
 }

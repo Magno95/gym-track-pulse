@@ -139,7 +139,6 @@ export function EditSessionDialog({
           sets: materializeSets(payload.sets as Array<{ reps: number; weight: number }>, isBodyweight,
             bodyWeightForEdit(session, payload.date, history.data ?? []), isTimedBodyweight ? "time" : "weight"),
           valueMultiplier,
-          suppressToast: true,
         });
         lastSavedHashRef.current = payloadHash;
         setSaveStatus("saved");
@@ -279,7 +278,7 @@ export function EditSessionDialog({
   };
 
   const statusLabel = {
-    saved: "Saved on this device",
+    saved: "",
     pending: "Saving soon...",
     saving: "Saving...",
     invalid: "Fix invalid fields to save",
@@ -379,7 +378,7 @@ export function EditSessionDialog({
             </div>
 
             <div className="space-y-2 pt-4">
-              <p role="status" className="text-center text-xs text-muted-foreground">{statusLabel}</p>
+              {statusLabel && <p role="status" className="text-center text-xs text-muted-foreground">{statusLabel}</p>}
               <Button type="button" size="lg" disabled={loading}
                 onClick={(event) => { event.currentTarget.blur(); addSet(); }}
                 className="h-14 w-full rounded-xl bg-accent text-base font-semibold text-accent-foreground hover:bg-accent/90 focus-visible:ring-accent active:scale-[0.98]">

@@ -33,13 +33,14 @@ export async function cacheHarness(store = {}, boundaries = {}) {
     const code = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX } }).outputText;
     vm.runInNewContext(code, {
       exports, require: (name) => {
+        if (boundaries.modules?.[name]) return boundaries.modules[name];
         if (name === "@/integrations/supabase/client" && boundaries.supabase) return { supabase: boundaries.supabase };
         if (name.endsWith("supabaseStore")) return { supabaseStore: implementation };
         if (name.startsWith("@/")) return load(name.slice(2));
         if (name.startsWith("./") || name.startsWith("../")) return load(posix.normalize(posix.join(posix.dirname(path), name)));
         return require(name);
       },
-      localStorage: browserStorage, crypto: webcrypto, Date, console, navigator: { onLine: true },
+      localStorage: browserStorage, crypto: boundaries.crypto ?? webcrypto, Date, console, navigator: { onLine: true },
       indexedDB, setTimeout, clearTimeout, setInterval, clearInterval,
     });
     return exports;

@@ -189,7 +189,7 @@ const SessionDetail = () => {
         <StravaPublish date={date} exercises={data} complete={hasCompleteHistory && !isError} />
         {isError && <QueryError onRetry={() => void refetch()} />}
         {!hasCompleteHistory && <p role="status" className="text-sm text-muted-foreground">
-          Only changes saved on this device are available. Connect to load the full day.
+          Full session history is unavailable. Connect to load the full day.
         </p>}
         {/* Superset Cards */}
         {supersets.map((superset) => (

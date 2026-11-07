@@ -1,3 +1,4 @@
+import { createUuid } from "@/lib/uuid";
 import { openDB, type DBSchema, type IDBPDatabase } from "idb";
 import type { SessionSet } from "./bodyweight";
 import { supabaseStore } from "./supabaseStore";
@@ -79,13 +80,13 @@ export async function addToSyncQueue(input: Pick<SyncOperation, "type" | "payloa
   const replace = input.type === "update_session" && previous?.type === "update_session" ? previous : undefined;
   const payload = { ...input.payload };
   if (input.type === "delete_image") payload.cleanupAfter ??= Date.now() + 10 * 60_000;
-  if (input.type === "add_exercise" || input.type === "add_session") payload.tempId ??= crypto.randomUUID();
+  if (input.type === "add_exercise" || input.type === "add_session") payload.tempId ??= createUuid();
   if (input.type === "add_superset_session") {
-    payload.primaryTempId ??= crypto.randomUUID(); payload.secondaryTempId ??= crypto.randomUUID();
-    payload.supersetId ??= crypto.randomUUID();
+    payload.primaryTempId ??= createUuid(); payload.secondaryTempId ??= createUuid();
+    payload.supersetId ??= createUuid();
   }
   const operation: SyncOperation = {
-    ...input, payload, userId, id: replace?.id ?? crypto.randomUUID(), version: crypto.randomUUID(),
+    ...input, payload, userId, id: replace?.id ?? createUuid(), version: createUuid(),
     timestamp: replace?.timestamp ?? Math.max(Date.now(), (queue[queue.length - 1]?.timestamp ?? 0) + 1),
     retries: 0, nextAttemptAt: 0,
   };
@@ -103,7 +104,7 @@ async function acquireLease(userId: string, token: string) {
   await tx.done; return available;
 }
 async function flush(userId: string, force: boolean) {
-  const token = crypto.randomUUID();
+  const token = createUuid();
   if (!await acquireLease(userId, token)) return;
   const renewal = setInterval(() => { void acquireLease(userId, token).catch(console.error); }, 20_000);
   try {
