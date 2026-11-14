@@ -53,7 +53,7 @@ const detailsSchema = z.object({
   description: z.string().max(1000, { message: "Description must be less than 1000 characters" }),
   unit: z.enum(["weight", "distance", "time"]),
   is_bodyweight: z.boolean().default(false),
-  superset_multiplier: z.coerce.number().min(1, "Multiplier must be at least 1").max(5, "Multiplier must be at most 5"),
+  superset_multiplier: z.coerce.number<number>().min(1, "Multiplier must be at least 1").max(5, "Multiplier must be at most 5"),
 });
 
 type DetailsFormValues = z.infer<typeof detailsSchema>;
@@ -101,7 +101,7 @@ export function EditExerciseDetailsDialog({
   const [editingPrIndex, setEditingPrIndex] = useState<number | null>(null);
   const [editingPrText, setEditingPrText] = useState("");
 
-  const form = useForm<DetailsFormValues>({
+  const form = useForm<z.input<typeof detailsSchema>, unknown, DetailsFormValues>({
     resolver: zodResolver(detailsSchema),
     defaultValues: {
       name: currentName || "",

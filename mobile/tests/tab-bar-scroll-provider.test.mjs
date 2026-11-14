@@ -3,12 +3,13 @@ import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import vm from 'node:vm';
 import { test } from 'node:test';
-import ts from '../../node_modules/typescript/lib/typescript.js';
-import React from '../../node_modules/react/index.js';
-import TestRenderer, { act } from '../../node_modules/react-test-renderer/index.js';
+import ts from 'typescript';
+import React from 'react';
+import TestRenderer, { act } from 'react-test-renderer';
 import { createTabBarScrollTracker } from '../src/data/tab-bar-scroll.ts';
 
-const require = createRequire(new URL('../../package.json', import.meta.url));
+globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+const require = createRequire(import.meta.url);
 function fixture(reduced = false) {
   const context = React.createContext(null), callbacks = [], springs = [];
   let controls, renders = 0;

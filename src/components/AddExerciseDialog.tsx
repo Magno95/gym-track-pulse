@@ -40,7 +40,7 @@ const exerciseSchema = z.object({
     .min(1, { message: "Exercise name is required" })
     .max(50, { message: "Name must be less than 50 characters" }),
   category: z.enum(["arms", "chest", "back", "legs", "core", "cardio"], {
-    required_error: "Please select a category",
+    error: "Please select a category",
   }),
 });
 

@@ -14,6 +14,7 @@ export function swipeMocks(React, element) {
         usePanGesture: (config) => config,
       },
       'react-native-reanimated': {
+        __esModule: true,
         default: { View: element('reanimated') },
         useSharedValue: (initial) => React.useState(() => ({ value: initial }))[0],
         useAnimatedStyle: (style) => style,

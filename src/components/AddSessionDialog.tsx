@@ -98,7 +98,7 @@ export function AddSessionDialog({
   const secondaryIsTimed = secondaryIsBodyweight && selectedSecondaryExercise?.unit === "time";
   const sessionSchema = useMemo(() => createSessionSchema(isTimedBodyweight, secondaryIsTimed), [isTimedBodyweight, secondaryIsTimed]);
 
-  const form = useForm<SessionFormValues>({
+  const form = useForm<z.input<typeof sessionSchema>, unknown, SessionFormValues>({
     resolver: zodResolver(sessionSchema),
     defaultValues: {
       date: todayLocal(),

@@ -3,9 +3,9 @@ import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import vm from 'node:vm';
 import { test } from 'node:test';
-import ts from '../../node_modules/typescript/lib/typescript.js';
-import React from '../../node_modules/react/index.js';
-import TestRenderer, { act } from '../../node_modules/react-test-renderer/index.js';
+import ts from 'typescript';
+import React from 'react';
+import TestRenderer, { act } from 'react-test-renderer';
 import * as domain from '../src/domain.ts';
 import * as editor from '../src/data/session-editor.ts';
 import { buildSession, newExercise } from '../src/data/actions.ts';
@@ -15,7 +15,8 @@ import { createModalDismissGuard } from '../src/modal-dismiss-guard.ts';
 import * as swipe from '../src/swipe-delete.ts';
 import { swipeMocks } from './swipe-mocks.mjs';
 
-const require = createRequire(new URL('../../package.json', import.meta.url));
+globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+const require = createRequire(import.meta.url);
 const { typography, layout } = await import('../src/design.ts');
 
 function fixture({ history = [], secondaryHistory = [], params = {}, exerciseSettings = {}, measurements = [], reducedMotion = true } = {}) {
@@ -82,7 +83,7 @@ function fixture({ history = [], secondaryHistory = [], params = {}, exerciseSet
     'expo-haptics': { selectionAsync: async () => {}, impactAsync: async (style) => { impacts.push(style); }, ImpactFeedbackStyle: { Medium: 'medium' } },
     'expo-crypto': { randomUUID: () => `row-${++uuid}` },
     'react-native-safe-area-context': { useSafeAreaInsets: () => ({ top: 0, bottom: 16 }) },
-    '@react-native-community/datetimepicker': { default: element('date') },
+    '@react-native-community/datetimepicker': { __esModule: true, default: element('date') },
     '../tab-bar-scroll': { useTabBarScroll: () => () => {} },
     '@/workout': { useWorkout: () => workout }, '@/active-session': { useActiveSession: () => ({ active: { date: '2026-11-13' } }) },
     '@/domain': domain, '@/data/session-editor': editor, '@/data/exercises': exercises, '@/modal-dismiss-guard': { createModalDismissGuard }, '@/swipe-delete': swipe,
