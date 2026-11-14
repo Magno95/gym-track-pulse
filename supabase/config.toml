@@ -1,4 +1,4 @@
-project_id = "gixmjerckbujswifueeb"
+project_id = "qmgrcpkpwprwcqljvopo"
 
 [functions.strava]
 # Every action, including OAuth completion, also checks auth.getUser in the handler.

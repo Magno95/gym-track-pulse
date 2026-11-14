@@ -1,0 +1,42 @@
+{
+  "expo": {
+    "name": "GymTrack",
+    "slug": "gymtrack-iphone",
+    "scheme": "gymtrack",
+    "version": "0.2.0",
+    "platforms": [
+      "ios"
+    ],
+    "orientation": "portrait",
+    "icon": "./assets/brand/icon.png",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "it.gymtrack.pulse",
+      "appleTeamId": "7CY29ZWAZH",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "plugins": [
+      "expo-router",
+      "expo-sqlite",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "GymTrack usa le immagini che scegli per personalizzare gli esercizi.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ],
+      "expo-sharing",
+      "expo-web-browser",
+      "@react-native-community/datetimepicker",
+      ["expo-widgets", { "bundleIdentifier": "it.gymtrack.pulse.ExpoWidgetsTarget", "groupIdentifier": "group.it.gymtrack.pulse" }],
+      ["expo-notifications", { "enableRemoteNotifications": false }]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

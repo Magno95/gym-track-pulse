@@ -3,8 +3,30 @@ import { Navigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { stravaRequest } from "@/lib/strava";
 import { Button } from "@/components/ui/button";
+import { useEffect } from "react";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { nativeStravaHandoff } from "@/lib/nativeOAuth";
 
 export default function StravaCallback() {
+  const [params] = useSearchParams();
+  const target = nativeStravaHandoff(params);
+  return target ? <NativeReturn target={target} /> : <ProtectedRoute><WebStravaCallback /></ProtectedRoute>;
+}
+
+function NativeReturn({ target }: { target: string }) {
+  useEffect(() => {
+    // No access tokens or web session are transferred. The native client completes
+    // the single-use code exchange with its own authenticated GymTrack account.
+    window.history.replaceState(null, "", "/strava/callback");
+    window.location.replace(target);
+  }, [target]);
+  return <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-6 text-center">
+    <p role="status">Torniamo a GymTrack per completare il collegamento.</p>
+    <Button asChild><a href={target}>Apri GymTrack</a></Button>
+  </div>;
+}
+
+function WebStravaCallback() {
   const { userId } = useAuth();
   const [params] = useSearchParams();
   const state = params.get("state");

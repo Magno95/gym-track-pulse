@@ -42,7 +42,7 @@ const App = () => (
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/exercise/:id" element={<ProtectedRoute><ExerciseDetail /></ProtectedRoute>} />
           <Route path="/session/:date" element={<ProtectedRoute><SessionDetail /></ProtectedRoute>} />
-          <Route path="/strava/callback" element={<ProtectedRoute><StravaCallback /></ProtectedRoute>} />
+          <Route path="/strava/callback" element={<StravaCallback />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

@@ -28,3 +28,11 @@ supabase/.temp/
 *.njsproj
 *.sln
 *.sw?
+.env*
+!.env.example
+!.env.production.example
+# Local dependency cache and private database migration artifacts
+.npm-cache/
+migration-data.local/
+# Local Netlify folder
+.netlify

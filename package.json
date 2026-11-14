@@ -12,7 +12,8 @@
     "release:patch": "npm version patch --no-git-tag-version",
     "test": "node --test tests/*.test.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.app.json && tsc --noEmit -p tsconfig.node.json && tsc -p tsconfig.strava.json",
-    "bundle:stats": "node scripts/bundle-stats.mjs"
+    "bundle:stats": "node scripts/bundle-stats.mjs",
+    "backend:deploy": "node --env-file=.env.production scripts/deploy-backend.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -84,6 +85,7 @@
     "globals": "^15.15.0",
     "lovable-tagger": "file:tools/lovable-tagger",
     "react-test-renderer": "^18.3.1",
+    "supabase": "2.122.1",
     "tailwindcss": "^4.3.3",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.38.0",
