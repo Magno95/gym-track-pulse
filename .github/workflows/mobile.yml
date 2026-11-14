@@ -31,7 +31,7 @@ jobs:
       run:
         working-directory: mobile
     env:
-      NPM_CONFIG_CACHE: ${{ runner.temp }}/gymtrack-npm-cache
+      NPM_CONFIG_CACHE: ${{ github.workspace }}/mobile/.npm-cache
       EXPO_PUBLIC_SUPABASE_URL: https://example.supabase.co
       EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci-placeholder
     steps:
